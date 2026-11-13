@@ -54,51 +54,17 @@ spring:
 # ---------- Sa-Token（网关只做 token 粗校验，会话存 Redis） ----------
 # 存储方式：sa-token-redis-jackson 提供 SaTokenDaoRedisJackson，
 # 由 common-security-core 的 SaTokenStorageConfig 显式注册进 SaManager（非内存实现）。
-sa-token:
-  token-name: Authorization
-  token-prefix: Bearer
-  is-read-header: true
-  is-read-cookie: false
-  is-log: false
+# sa-token 基础参数统一在 Nacos 的 chatcut-common-{profile}.yaml。
 
 chatcut:
   security:
     internal-secret: ${INTERNAL_SECRET:}
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,gateway,prometheus
-  endpoint:
-    health:
-      probes:
-        enabled: true
-
+# ---------- 监控 / 日志公共段在 Nacos chatcut-common-{profile}.yaml，这里只留网关特有日志级别 ----------
 logging:
   level:
-    root: INFO
     org.springframework.cloud.gateway: INFO
-  pattern:
-    # console 只作用于控制台，file 才作用于日志文件——两者都要显式配，否则文件用 Boot 默认 pattern，丢失 traceId。
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
-  # 落盘：排查问题直接 grep traceId，不依赖 IDEA 控制台（文件与控制台内容一致）。
-  file:
-    name: ${user.home}/logs/chatcut/chatcut-gateway.log
-  logback:
-    rollingpolicy:
-      file-name-pattern: "${user.home}/logs/chatcut/chatcut-gateway.%d{yyyy-MM-dd}.%i.log.gz"
-      max-file-size: 50MB
-      max-history: 14
-      total-size-cap: 1GB
 
-# ============================================================
-# Nacos 环境清单：新增环境只改这里，不再维护 NACOS_ADDR / NACOS_NAMESPACE 一堆环境变量
-#   server-addr / namespace 用嵌套占位符按 spring.profiles.active 取值，
-#   profile=local 时取 nacos.endpoints.local 与 nacos.namespaces.local。
-#   注意：namespace 要的是「命名空间 ID」而不是名称。
-# ============================================================
 nacos:
   group: DEFAULT_GROUP
   username: ${NACOS_USERNAME:nacos}

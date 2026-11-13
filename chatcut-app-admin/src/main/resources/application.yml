@@ -7,8 +7,7 @@ spring:
     name: chatcut-app-admin
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
-  lifecycle:
-    timeout-per-shutdown-phase: 30s
+  # Nacos 配置中心：共享配置 + 本服务配置，缺失不阻断启动
   config:
     import:
       - optional:nacos:chatcut-common-${spring.profiles.active}.yaml
@@ -31,64 +30,12 @@ spring:
         username: ${nacos.username}
         password: ${nacos.password}
 
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: true
-  global-config:
-    banner: false
-    db-config:
-      id-type: assign_id
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-
-# ---------- Sa-Token ----------
-# 会话存储：Redis（SaTokenDaoRedisJackson），多节点共享、重启不掉线；
-# 由 common-security-core 的 SaTokenStorageConfig 显式注册进 SaManager，禁止退化成内存实现。
-# Redis 连接放 Nacos 的 chatcut-common-{profile}.yaml，三个服务必须同一实例同一 database。
-sa-token:
-  token-name: Authorization
-  token-prefix: Bearer
-  is-read-header: true
-  is-read-cookie: false
-  # 允许多端同时在线（多节点部署下不做单端互踢）
-  is-concurrent: true
-  # 不共用 token：每次登录签发新 token，便于按端退出
-  is-share: false
-  token-style: uuid
-  is-log: false
-
-# ---------- 监控 ----------
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus
-  endpoint:
-    health:
-      probes:
-        enabled: true
-      show-details: when-authorized
-  metrics:
-    tags:
-      application: ${spring.application.name}
-
-# ---------- 日志 ----------
-logging:
-  level:
-    root: INFO
-    com.chatcut: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
-  # 落盘：排查问题直接 grep traceId，不依赖 IDEA 控制台（文件与控制台内容一致）。
-  file:
-    name: ${user.home}/logs/chatcut/chatcut-admin.log
-  logback:
-    rollingpolicy:
-      file-name-pattern: "${user.home}/logs/chatcut/chatcut-admin.%d{yyyy-MM-dd}.%i.log.gz"
-      max-file-size: 50MB
-      max-history: 14
-      total-size-cap: 1GB
+# ---------- 安全（admin 后台走管理端账号体系，不能用默认的 user） ----------
+chatcut:
+  security:
+    type: admin
+    # 为空时跳过内部签名校验，仅限本地；测试/生产必须配置
+    internal-secret: ${INTERNAL_SECRET:}
 
 nacos:
   group: DEFAULT_GROUP

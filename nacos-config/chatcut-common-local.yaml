@@ -5,8 +5,9 @@
 #   dataId    : chatcut-common-local.yaml
 #   format    : YAML
 #
-# 三个服务（gateway / app-api / app-admin）共用，只放跨服务共享的中间件。
+# 三个服务（gateway / app-api / app-admin）共用，放跨服务共享的配置。
 # 里面的 ${ENV:default} 占位符在服务启动时仍会从机器环境变量取值——没设就用 default。
+# 优先级：远程配置 > 本地 jar 配置，本文件中的 key 会覆盖服务 application.yml 的同名 key。
 # ============================================================
 
 spring:
@@ -25,6 +26,73 @@ spring:
           max-idle: 8
           min-idle: 2
           max-wait: 2s
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+# ---------- MyBatis-Plus ----------
+# gateway 不接 DB，此段对它无意义但无害。
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+    db-config:
+      id-type: assign_id
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# ---------- Sa-Token ----------
+# 会话存储：Redis（SaTokenDaoRedisJackson），多节点共享、重启不掉线；
+# 由 common-security-core 的 SaTokenStorageConfig 显式注册进 SaManager，禁止退化成内存实现。
+# 注意：chatcut.security.type（admin / user 双账号体系）在服务私有配置里，不在公共段。
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  is-read-header: true
+  is-read-cookie: false
+  # 允许多端同时在线（多节点部署下不做单端互踢）
+  is-concurrent: true
+  # 不共用 token：每次登录签发新 token，便于按端退出
+  is-share: false
+  token-style: uuid
+  is-log: false
+
+# ---------- 监控 ----------
+# include 含 gateway 端点：只有网关（WebFlux Gateway）有该端点，业务服务上配置无害。
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,gateway
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# ---------- 日志 ----------
+# 文件名按 spring.application.name 参数化，一份配置三个服务共用。
+logging:
+  level:
+    root: INFO
+    com.chatcut: INFO
+  pattern:
+    # console 只作用于控制台，file 才作用于日志文件——两者都要显式配，否则文件用 Boot 默认 pattern，丢失 traceId。
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+  # 落盘：排查问题直接 grep traceId，不依赖 IDEA 控制台（文件与控制台内容一致）。
+  file:
+    name: ${user.home}/logs/chatcut/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      file-name-pattern: "${user.home}/logs/chatcut/${spring.application.name}.%d{yyyy-MM-dd}.%i.log.gz"
+      max-file-size: 50MB
+      max-history: 14
+      total-size-cap: 1GB
 
 # ---------- 出入参日志切面 ----------
 # controller 层自动切入（com.chatcut..controller..*），service 层用 @LogInvocation 手动标记。

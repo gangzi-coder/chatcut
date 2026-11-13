@@ -8,9 +8,6 @@ spring:
     name: chatcut-app-api
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
-  lifecycle:
-    timeout-per-shutdown-phase: 30s
-
   # Nacos 配置中心：共享配置 + 本服务配置，缺失不阻断启动
   config:
     import:
@@ -34,23 +31,6 @@ spring:
         username: ${nacos.username}
         password: ${nacos.password}
 
-  # 数据源 / Redis / RocketMQ 等中间件配置不在 jar 内：
-  # 测试/生产一律从 Nacos 取（chatcut-common-*.yaml + chatcut-app-api-*.yaml），
-  # 本地开发的兜底值在 application-local.yml，该文件 profile=local 才生效。
-  # mybatis-plus 等静态配置留在下方，不随环境变。
-
-# ---------- MyBatis-Plus ----------
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: true
-  global-config:
-    banner: false
-    db-config:
-      id-type: assign_id
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-
 # ---------- 业务开关 ----------
 chatcut:
   # 环境标识不单独配置：统一用 spring.profiles.active（Redis key 前缀、日志等都由它推导）
@@ -60,75 +40,6 @@ chatcut:
     type: user
     # 为空时跳过内部签名校验，仅限本地；测试/生产必须配置
     internal-secret: ${INTERNAL_SECRET:}
-  oss:
-    internal-endpoint: ${OSS_INTERNAL_ENDPOINT:}
-    public-endpoint: ${OSS_PUBLIC_ENDPOINT:}
-    bucket: ${OSS_BUCKET:}
-    access-key-id: ${OSS_AK:}
-    access-key-secret: ${OSS_SK:}
-
-# ---------- 文档（生产关闭） ----------
-springdoc:
-  api-docs:
-    enabled: true
-  swagger-ui:
-    enabled: true
-
-# 增强文档 UI：经网关访问 /api/doc.html，直连访问 /doc.html
-knife4j:
-  enable: true
-  setting:
-    language: zh_cn
-
-# ---------- Sa-Token ----------
-# 会话存储：Redis（SaTokenDaoRedisJackson），多节点共享、重启不掉线；
-# 由 common-security-core 的 SaTokenStorageConfig 显式注册进 SaManager，禁止退化成内存实现。
-# Redis 连接放 Nacos 的 chatcut-common-{profile}.yaml，三个服务必须同一实例同一 database。
-sa-token:
-  token-name: Authorization
-  token-prefix: Bearer
-  is-read-header: true
-  is-read-cookie: false
-  # 允许多端同时在线（多节点部署下不做单端互踢）
-  is-concurrent: true
-  # 不共用 token：每次登录签发新 token，便于按端退出
-  is-share: false
-  token-style: uuid
-  is-log: false
-
-# ---------- 监控 ----------
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus
-  endpoint:
-    health:
-      probes:
-        enabled: true
-      show-details: when-authorized
-  metrics:
-    tags:
-      application: ${spring.application.name}
-
-# ---------- 日志 ----------
-logging:
-  level:
-    root: INFO
-    com.chatcut: INFO
-  pattern:
-    # console 只作用于控制台，file 才作用于日志文件——两者都要显式配，否则文件用 Boot 默认 pattern，丢失 traceId。
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
-  # 落盘：排查问题直接 grep traceId，不依赖 IDEA 控制台（文件与控制台内容一致）。
-  file:
-    name: ${user.home}/logs/chatcut/chatcut-api.log
-  logback:
-    rollingpolicy:
-      file-name-pattern: "${user.home}/logs/chatcut/chatcut-api.%d{yyyy-MM-dd}.%i.log.gz"
-      max-file-size: 50MB
-      max-history: 14
-      total-size-cap: 1GB
 
 # ============================================================
 # Nacos 环境清单：新增环境只改这里，不再维护 NACOS_ADDR / NACOS_NAMESPACE 一堆环境变量
