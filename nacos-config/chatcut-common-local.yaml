@@ -59,12 +59,12 @@ sa-token:
   is-log: false
 
 # ---------- 监控 ----------
-# include 含 gateway 端点：只有网关（WebFlux Gateway）有该端点，业务服务上配置无害。
+# 三个服务共有的基础端点；gateway 端点只有网关有，放在 chatcut-gateway-{profile}.yaml 里单独加。
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,gateway
+        include: health,info,prometheus
   endpoint:
     health:
       probes:

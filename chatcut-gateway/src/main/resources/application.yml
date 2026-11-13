@@ -57,14 +57,35 @@ spring:
 # 由 common-security-core 的 SaTokenStorageConfig 显式注册进 SaManager（非内存实现）。
 # sa-token 基础参数统一在 Nacos 的 chatcut-common-{profile}.yaml。
 
+# ---------- 网关路由日志 ----------
+# AccessLogWebFilter 读取：打【网关路由-请求/响应】，生成 traceId 透传，并给出实际转发的目标实例 ip:port。
+# 不打印请求/响应体（网关拿的是流）。业务服务不加载该过滤器，配置也不会被读到。
 chatcut:
   security:
     internal-secret: ${INTERNAL_SECRET:}
+  log:
+    gateway:
+      enabled: true
+      # 健康检查、图标等高频无意义请求不进日志
+      exclude-paths: [ /actuator/**, /favicon.ico ]
 
 # ---------- 监控 / 日志公共段在 Nacos chatcut-common-{profile}.yaml，这里只留网关特有日志级别 ----------
 logging:
   level:
     org.springframework.cloud.gateway: INFO
+
+# ---------- 监控 ----------
+# 网关比业务服务多暴露 gateway 端点（路由表、断言、过滤器链），排查路由问题用。
+# 注意：Gateway 4.x 的该端点默认不注册，必须显式 enabled=true，否则访问 /actuator/gateway/routes 是 404。
+management:
+  endpoints:
+    web:
+      exposure:
+        # 列表属性是整体覆盖，不是追加：这里必须把公共段的三项一起写上
+        include: health,info,prometheus,gateway
+  endpoint:
+    gateway:
+      enabled: true
 
 nacos:
   group: DEFAULT_GROUP

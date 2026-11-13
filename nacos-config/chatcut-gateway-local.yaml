@@ -5,7 +5,29 @@
 #   dataId    : chatcut-gateway-local.yaml
 #   format    : YAML
 #
-# 网关目前只消费 Redis（来自 chatcut-common-*.yaml），本文件暂时留空；
-# 以后网关限流、路由开关等网关私有的动态配置放这里。
-# 注意：内容不能为空，Nacos 不允许发布空配置，所以先放一个注释占位。
+# 网关私有配置：只服务 chatcut-gateway，不要在 chatcut-common-*.yaml 里放这里的内容。
+# 跨服务共享的（Redis / Sa-Token / 日志底座 / MyBatis-Plus）才进公共配置。
 # ============================================================
+
+# ---------- 监控 ----------
+# 网关比业务服务多暴露 gateway 端点（路由表、断言、过滤器链），排查路由问题用。
+# 注意：Gateway 4.x 的该端点默认不注册，必须显式 enabled=true，否则访问 /actuator/gateway/routes 是 404。
+management:
+  endpoints:
+    web:
+      exposure:
+        # 列表属性是整体覆盖，不是追加：这里必须把公共段的三项一起写上
+        include: health,info,prometheus,gateway
+  endpoint:
+    gateway:
+      enabled: true
+
+# ---------- 网关路由日志 ----------
+# AccessLogWebFilter 读取：打【网关路由-请求/响应】，生成 traceId 透传，并给出实际转发的目标实例 ip:port。
+# 不打印请求/响应体（网关拿的是流）。业务服务不加载该过滤器，配置也不会被读到。
+chatcut:
+  log:
+    gateway:
+      enabled: true
+      # 健康检查、图标等高频无意义请求不进日志
+      exclude-paths: [/actuator/**, /favicon.ico]

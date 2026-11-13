@@ -71,9 +71,11 @@ curl http://127.0.0.1:8083/actuator/health
 
 | 层 | 内容 | 位置 |
 |---|---|---|
-| 静态配置 | 端口、mybatis-plus、sa-token、springdoc、日志 | jar 内 `application.yml` |
-| 本地兜底 | 数据源 / Redis / MQ 的 127.0.0.1 默认值 | jar 内 `application-local.yml`（仅 profile=local） |
-| 环境配置 | 数据源、Redis、RocketMQ（test/prod 真实地址） | **Nacos**：`chatcut-common-{profile}.yaml` + 各服务 `{dataId}` |
+| 服务私有静态配置 | 端口、Nacos 接入信息、服务自己的安全体系（`chatcut.security.type`）、文档开关 | jar 内 `application.yml` |
+| 公共配置 | mybatis-plus、sa-token、management 基础端点、日志底座、出入参日志、Redis | **Nacos**：`chatcut-common-{profile}.yaml`（只放三个服务共享的） |
+| 服务私有配置 | 数据源、RocketMQ、网关路由日志与 gateway 端点、各服务自己的开关 | **Nacos**：各服务 `chatcut-{服务}-{profile}.yaml` |
+
+三个服务的 `application.yml` 只有 `server` / `spring`（含 `config.import`）/ 服务特有开关 / `nacos` 环境清单；MyBatis-Plus、Sa-Token、management、日志这些跨服务同构的配置统一在 `chatcut-common-{profile}.yaml`，日志文件名用 `${spring.application.name}` 参数化。
 
 Nacos 样例在 `nacos-config/` 目录，按 profile 改名上传（如 `chatcut-common-test.yaml`）。jar 内不放中间件配置，`optional:` 导入缺失时启动会因拿不到数据源直接失败——这是故意的 fail-fast。
 
@@ -206,7 +208,8 @@ java -jar chatcut-app-admin/target/chatcut-app-admin-1.0.0-SNAPSHOT.jar
 | 事项 | 规则 |
 |---|---|
 | 响应 | `Result<T>{code,msg,data,traceId}`，`code=0` 成功 |
-| 出入参日志 | `common-web` 的 `InvocationLogAspect`：controller 层（`com.chatcut..controller..*`）自动切入，service 层用 `@LogInvocation` 手动标记；格式对齐 EasyMS 风格三段式——`【服务入口-请求】-【服务: xx】-【请求IP】-【请求地址】-【请求方法】-【方法】-【发起时间】`、`【服务入口-入参】{...}`、`【服务入口-响应】-【用时: xms】-【响应数据: {...}】`、异常 `【服务入口-异常】-【异常类型】-【异常信息】`；不截断；敏感字段按 Nacos `chatcut.log.invocation.sensitive-fields` 黑名单脱敏为 `***`；慢接口响应行升 WARN。service 层标签为「方法调用」。已知限制：同类自调用、final 方法不生效；路径参数绑定失败发生在进 controller 前，切面拦不到 |
+| 出入参日志 | `common-web` 的 `InvocationLogAspect`：controller 层（`com.chatcut..controller..*`）自动切入，service 层用 `@LogInvocation` 手动标记；格式对齐 EasyMS 风格三段式——`【服务入口-请求】-【服务: xx】-【实例: ip:port】-【调用方: chatcut-gateway/direct】-【请求IP】-【请求地址】-【请求方法】-【方法】-【发起时间】`、`【服务入口-入参】{...}`、`【服务入口-响应】-【用时: xms】-【响应数据: {...}】`、异常 `【服务入口-异常】-【异常类型】-【异常信息】`；不截断；敏感字段按 Nacos `chatcut.log.invocation.sensitive-fields` 黑名单脱敏为 `***`；慢接口响应行升 WARN。service 层标签为「方法调用」。已知限制：同类自调用、final 方法不生效；路径参数绑定失败发生在进 controller 前，切面拦不到 |
+| 网关路由日志 | `chatcut-gateway` 的 `AccessLogWebFilter`（最外层 GlobalFilter）：`【网关路由-请求】-【路由: app-admin】-【目标服务: chatcut-app-admin】-【请求IP】-【请求地址】-【请求方法】`、`【网关路由-响应】-【目标实例: ip:port】-【状态码】-【用时: xms】`、异常 `【网关路由-异常】`；4xx/5xx 升 WARN。它是链路起点——生成/复用 traceId 写入 `X-Trace-Id`，并写 `X-Caller` 供下游标注调用方，因此网关与业务服务日志的 traceId 一致，可按 traceId 串起「网关转给谁 → 落到哪个实例 → 处理了多久」。不打印请求/响应体（流式，读 body 代价大）。开关与排除路径在网关私有配置 `chatcut-gateway-{profile}.yaml` 的 `chatcut.log.gateway.*` |
 | HTTP 状态码 | 业务失败 = **HTTP 200 + 非 0 code**（按 code 分支）；框架级故障（`SystemException` / 未知异常兜底）= **HTTP 500 + 10999**，网关与监控按状态码即可发现服务异常；鉴权失败见下「鉴权失败」行 |
 | 错误码 | 10xxx 通用 / 20xxx 认证 / 30xxx 用户 / 40xxx 剪辑 / 50xxx AI / 60xxx 文件 / 70xxx 任务 / 80xxx 管理端 |
 | 契约 | 公共枚举放 `common-core` 的 `enums` 包；仅单服务使用的放该服务内；枚举值只增不改 |
