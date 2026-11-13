@@ -1,5 +1,6 @@
+## admin 端口使用 9201-9300
 server:
-  port: 8081
+  port: 9201
   shutdown: graceful
   max-http-request-header-size: 32KB
 

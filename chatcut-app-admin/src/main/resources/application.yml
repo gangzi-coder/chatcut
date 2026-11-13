@@ -1,5 +1,6 @@
+## admin 端口使用 9101-9200
 server:
-  port: 8082
+  port: 9101
   shutdown: graceful
 
 spring:

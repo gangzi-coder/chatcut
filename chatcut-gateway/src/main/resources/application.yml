@@ -1,5 +1,6 @@
+## gateway 端口使用 9001-9100
 server:
-  port: 8083
+  port: 9001
   shutdown: graceful
 
 spring:
