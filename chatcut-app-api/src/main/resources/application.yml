@@ -41,12 +41,6 @@ chatcut:
     # 为空时跳过内部签名校验，仅限本地；测试/生产必须配置
     internal-secret: ${INTERNAL_SECRET:}
 
-# ============================================================
-# Nacos 环境清单：新增环境只改这里，不再维护 NACOS_ADDR / NACOS_NAMESPACE 一堆环境变量
-#   server-addr / namespace 用嵌套占位符按 spring.profiles.active 取值，
-#   profile=local 时取 nacos.endpoints.local 与 nacos.namespaces.local。
-#   注意：namespace 要的是「命名空间 ID」而不是名称。
-# ============================================================
 nacos:
   group: DEFAULT_GROUP
   username: ${NACOS_USERNAME:nacos}
