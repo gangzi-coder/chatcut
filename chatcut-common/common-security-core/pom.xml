@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.chatcut</groupId>
+    <artifactId>chatcut-common</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>common-security-core</artifactId>
+  <name>common-security-core</name>
+  <description>Sa-Token 双账号体系（user/admin），网关与业务服务共用</description>
+  <dependencies>
+    <dependency><groupId>com.chatcut</groupId><artifactId>common-core</artifactId></dependency>
+    <dependency><groupId>cn.dev33</groupId><artifactId>sa-token-core</artifactId></dependency>
+    <!-- 会话存 Redis：Dao 由 SaTokenStorageConfig 显式注册进 SaManager。
+         注意：不要在这里引 sa-token-spring-boot3-starter，它会带上 spring-boot-starter-web，
+         网关是 WebFlux，引了会把技术栈搞成 Servlet。 -->
+    <dependency><groupId>cn.dev33</groupId><artifactId>sa-token-redis-jackson</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-redis</artifactId></dependency>
+    <dependency><groupId>org.projectlombok</groupId><artifactId>lombok</artifactId></dependency>
+  </dependencies>
+</project>

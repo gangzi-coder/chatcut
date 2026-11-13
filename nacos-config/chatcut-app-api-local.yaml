@@ -1,0 +1,39 @@
+# ============================================================
+# Nacos 配置
+#   namespace : chatcut-local（填命名空间的 ID，不是名字）
+#   group     : DEFAULT_GROUP
+#   dataId    : chatcut-app-api-local.yaml
+#   format    : YAML
+#
+# 只放 app-api 自己的中间件配置（每个服务的数据源独立，便于以后拆库）。
+# ============================================================
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 以后拆库时只改库名：chatcut_auth / chatcut_task ...
+    url: jdbc:mysql://${MYSQL_HOST:10.0.43.167}:${MYSQL_PORT:3306}/${MYSQL_DB:chatcut}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    hikari:
+      pool-name: chatcut-api-pool
+      maximum-pool-size: 15
+      minimum-idle: 5
+      connection-timeout: 3000
+      validation-timeout: 3000
+      idle-timeout: 600000
+      max-lifetime: 1200000
+      # 保活：每 30s 发一次心跳，避免远程/办公网的空闲连接被 NAT 回收后串到下一次请求上。
+      keepalive-time: 30000
+      # 首次取连接失败时不 fail-fast：池不会因启动瞬间的网络闪断直接抛异常，网络恢复后自动建立。
+      # 不加这行时，日志会出现 HikariPool.checkFailFast -> CommunicationsException / No route to host。
+      initialization-fail-timeout: -1
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAMESRV:127.0.0.1:9876}
+  producer:
+    group: chatcut-app-api-producer
+    send-message-timeout: 3000
+  # 消费者起来后在这里追加：
+  # consumer:
+  #   group: chatcut-task-dispatch-consumer

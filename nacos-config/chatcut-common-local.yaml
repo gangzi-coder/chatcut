@@ -1,0 +1,27 @@
+# ============================================================
+# Nacos 配置
+#   namespace : chatcut-local（填命名空间的 ID，不是名字）
+#   group     : DEFAULT_GROUP
+#   dataId    : chatcut-common-local.yaml
+#   format    : YAML
+#
+# 三个服务（gateway / app-api / app-admin）共用，只放跨服务共享的中间件。
+# 里面的 ${ENV:default} 占位符在服务启动时仍会从机器环境变量取值——没设就用 default。
+# ============================================================
+
+spring:
+  data:
+    redis:
+      # 网关的 sa-token 会话与业务服务必须指向同一个 Redis 实例、同一个 database，
+      # 否则网关校验不到业务服务写入的登录态。
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 2s
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+          max-wait: 2s

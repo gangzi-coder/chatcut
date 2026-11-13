@@ -1,0 +1,114 @@
+server:
+  port: 8083
+  shutdown: graceful
+
+spring:
+  application:
+    name: chatcut-gateway
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import:
+      - optional:nacos:chatcut-common-${spring.profiles.active}.yaml
+      - optional:nacos:chatcut-gateway-${spring.profiles.active}.yaml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${nacos.server-addr}
+        namespace: ${nacos.namespace}
+        group: ${nacos.group}
+        username: ${nacos.username}
+        password: ${nacos.password}
+      config:
+        server-addr: ${nacos.server-addr}
+        namespace: ${nacos.namespace}
+        group: ${nacos.group}
+        file-extension: yaml
+        # Nacos 3.x 默认开启鉴权，不带账号密码会 403 / gRPC 连接被拒
+        username: ${nacos.username}
+        password: ${nacos.password}
+    gateway:
+      # 不用默认的按服务名暴露路由，全部显式声明，避免内部服务被意外暴露
+      discovery:
+        locator:
+          enabled: false
+      routes:
+        - id: app-api
+          uri: lb://chatcut-app-api
+          predicates:
+            - Path=/api/**
+          filters:
+            - StripPrefix=1
+        - id: app-admin
+          uri: lb://chatcut-app-admin
+          predicates:
+            - Path=/admin/**
+          filters:
+            - StripPrefix=1
+      httpclient:
+        connect-timeout: 2000
+        response-timeout: 30s
+
+
+
+# ---------- Sa-Token（网关只做 token 粗校验，会话存 Redis） ----------
+# 存储方式：sa-token-redis-jackson 提供 SaTokenDaoRedisJackson，
+# 由 common-security-core 的 SaTokenStorageConfig 显式注册进 SaManager（非内存实现）。
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  is-read-header: true
+  is-read-cookie: false
+  is-log: false
+
+chatcut:
+  security:
+    internal-secret: ${INTERNAL_SECRET:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+  # 落盘：排查问题直接 grep traceId，不依赖 IDEA 控制台（文件与控制台内容一致）。
+  file:
+    name: ${user.home}/logs/chatcut/chatcut-gateway.log
+  logback:
+    rollingpolicy:
+      file-name-pattern: "${user.home}/logs/chatcut/chatcut-gateway.%d{yyyy-MM-dd}.%i.log.gz"
+      max-file-size: 50MB
+      max-history: 14
+      total-size-cap: 1GB
+
+# ============================================================
+# Nacos 环境清单：新增环境只改这里，不再维护 NACOS_ADDR / NACOS_NAMESPACE 一堆环境变量
+#   server-addr / namespace 用嵌套占位符按 spring.profiles.active 取值，
+#   profile=local 时取 nacos.endpoints.local 与 nacos.namespaces.local。
+#   注意：namespace 要的是「命名空间 ID」而不是名称。
+# ============================================================
+nacos:
+  group: DEFAULT_GROUP
+  username: ${NACOS_USERNAME:nacos}
+  password: ${NACOS_PASSWORD:nacos}
+  server-addr: ${nacos.endpoints.${spring.profiles.active}}
+  namespace: ${nacos.namespaces.${spring.profiles.active}}
+  endpoints:
+    local: 127.0.0.1:8848
+    dev: nacos-dev.chatcut.internal:8848
+    prod: nacos.chatcut.internal:8848
+  namespaces:
+    local: 1898c274-9625-4117-ba85-e3757117deeb
+    # 建好 dev / prod 命名空间后把真实 ID 替换进来
+    dev: 00000000-0000-0000-0000-000000000000
+    prod: 00000000-0000-0000-0000-000000000000
