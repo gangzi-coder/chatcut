@@ -206,6 +206,7 @@ java -jar chatcut-app-admin/target/chatcut-app-admin-1.0.0-SNAPSHOT.jar
 | 事项 | 规则 |
 |---|---|
 | 响应 | `Result<T>{code,msg,data,traceId}`，`code=0` 成功 |
+| 出入参日志 | `common-web` 的 `InvocationLogAspect`：controller 层（`com.chatcut..controller..*`）自动切入，service 层用 `@LogInvocation` 手动标记；格式对齐 EasyMS 风格三段式——`【服务入口-请求】-【服务: xx】-【请求IP】-【请求地址】-【请求方法】-【方法】-【发起时间】`、`【服务入口-入参】{...}`、`【服务入口-响应】-【用时: xms】-【响应数据: {...}】`、异常 `【服务入口-异常】-【异常类型】-【异常信息】`；不截断；敏感字段按 Nacos `chatcut.log.invocation.sensitive-fields` 黑名单脱敏为 `***`；慢接口响应行升 WARN。service 层标签为「方法调用」。已知限制：同类自调用、final 方法不生效；路径参数绑定失败发生在进 controller 前，切面拦不到 |
 | HTTP 状态码 | 业务失败 = **HTTP 200 + 非 0 code**（按 code 分支）；框架级故障（`SystemException` / 未知异常兜底）= **HTTP 500 + 10999**，网关与监控按状态码即可发现服务异常；鉴权失败见下「鉴权失败」行 |
 | 错误码 | 10xxx 通用 / 20xxx 认证 / 30xxx 用户 / 40xxx 剪辑 / 50xxx AI / 60xxx 文件 / 70xxx 任务 / 80xxx 管理端 |
 | 契约 | 公共枚举放 `common-core` 的 `enums` 包；仅单服务使用的放该服务内；枚举值只增不改 |

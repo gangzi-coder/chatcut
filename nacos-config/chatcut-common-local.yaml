@@ -25,3 +25,15 @@ spring:
           max-idle: 8
           min-idle: 2
           max-wait: 2s
+
+# ---------- 出入参日志切面 ----------
+# controller 层自动切入（com.chatcut..controller..*），service 层用 @LogInvocation 手动标记。
+# 敏感字段（黑名单，小写比较）输出 "***"；不截断；慢接口（超过阈值）打 WARN+SLOW。
+# 注意：改这里的黑名单后需要重启服务（未开配置刷新）。gateway 是 WebFlux，不加载该切面，此段对它无意义但无害。
+chatcut:
+  log:
+    invocation:
+      enabled: true
+      slow-threshold-ms: 1000
+      sensitive-fields: [password, oldpassword, newpassword, confirmpassword, token, authorization, secret, smscode, idcard, phone, mobile]
+      exclude-paths: [/actuator/**, /v3/api-docs/**, /doc.html, /swagger-ui/**, /swagger-ui.html, /webjars/**, /favicon.ico, /internal/**, /error]

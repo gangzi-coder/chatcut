@@ -80,7 +80,9 @@ logging:
     root: INFO
     org.springframework.cloud.gateway: INFO
   pattern:
+    # console 只作用于控制台，file 才作用于日志文件——两者都要显式配，否则文件用 Boot 默认 pattern，丢失 traceId。
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
   # 落盘：排查问题直接 grep traceId，不依赖 IDEA 控制台（文件与控制台内容一致）。
   file:
     name: ${user.home}/logs/chatcut/chatcut-gateway.log
