@@ -33,7 +33,6 @@ spring:
 
 # ---------- 业务开关 ----------
 chatcut:
-  # 环境标识不单独配置：统一用 spring.profiles.active（Redis key 前缀、日志等都由它推导）
   cors:
     allowed-origins: ${CORS_ORIGINS:*}
   security:
