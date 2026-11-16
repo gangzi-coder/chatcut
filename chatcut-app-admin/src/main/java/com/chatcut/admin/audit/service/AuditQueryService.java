@@ -43,6 +43,8 @@ public class AuditQueryService {
                 .eq(StringUtils.hasText(req.getTargetType()), SysAuditLogEntity::getTargetType, req.getTargetType())
                 .eq(StringUtils.hasText(req.getTargetId()), SysAuditLogEntity::getTargetId, req.getTargetId())
                 .eq(req.getResult() != null, SysAuditLogEntity::getResult, req.getResult())
+                .eq(StringUtils.hasText(req.getTraceId()), SysAuditLogEntity::getTraceId, req.getTraceId())
+                .eq(StringUtils.hasText(req.getCaller()), SysAuditLogEntity::getCaller, req.getCaller())
                 .ge(req.getStartTime() != null, SysAuditLogEntity::getOpTime, req.getStartTime())
                 .le(req.getEndTime() != null, SysAuditLogEntity::getOpTime, req.getEndTime())
                 .orderByDesc(SysAuditLogEntity::getOpTime)

@@ -29,7 +29,9 @@ public class AuditController {
 
     private final AuditQueryService auditQueryService;
 
-    @Operation(summary = "审计日志分页列表", description = "支持按操作者/模块/动作/对象/结果/时间范围筛选")
+    @Operation(summary = "审计日志分页列表",
+            description = "支持按操作者/模块/动作/对象/结果/时间范围/traceId/调用方筛选。"
+                    + "按 traceId 查可确认某次请求是否留痕（网关透传的 traceId 与日志里的一致）")
     @GetMapping
     @SaCheckPermission(value = "system:audit:list", type = "admin")
     public Result<PageResult<AuditLogResp>> page(AuditLogQueryReq req) {

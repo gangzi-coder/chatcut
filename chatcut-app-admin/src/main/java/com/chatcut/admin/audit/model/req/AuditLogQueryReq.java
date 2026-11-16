@@ -37,6 +37,12 @@ public class AuditLogQueryReq {
     @Schema(description = "结果：1成功 2业务拒绝 3系统异常")
     private Integer result;
 
+    @Schema(description = "链路 ID，精确匹配。网关透传下来的那个 traceId，排查「某次请求到底留痕没有」时用")
+    private String traceId;
+
+    @Schema(description = "调用方：chatcut-gateway 表示经网关，direct 表示直连服务")
+    private String caller;
+
     @Schema(description = "操作时间起（含），格式 yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;
