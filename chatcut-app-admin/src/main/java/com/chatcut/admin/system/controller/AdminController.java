@@ -1,5 +1,8 @@
 package com.chatcut.admin.system.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.chatcut.admin.audit.annotation.AuditAction;
+import com.chatcut.admin.audit.annotation.AuditLog;
 import com.chatcut.admin.system.model.req.AdminCreateReq;
 import com.chatcut.admin.system.model.resp.AdminListResp;
 import com.chatcut.admin.system.service.AdminAccountService;
@@ -8,7 +11,6 @@ import com.chatcut.common.core.domain.Result;
 import com.chatcut.common.core.enums.EnableStatus;
 import com.chatcut.common.redis.lock.DistributedLock;
 import com.chatcut.common.security.web.CurrentUser;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +31,7 @@ public class AdminController {
     @Operation(summary = "创建管理员", description = "按 username 加分布式锁，防止并发创建同名账号")
     @PostMapping
     @SaCheckPermission(value = "system:admin:create", type = "admin")
+    @AuditLog(AuditAction.ADMIN_CREATE)
     public Result<Map<String, Long>> create(@Valid @RequestBody AdminCreateReq req) {
         Long id = distributedLock.execute("admin:create", req.getUsername(),
                 () -> accountService.create(req));
@@ -55,6 +58,7 @@ public class AdminController {
     @Operation(summary = "启用/停用管理员", description = "status: 1=启用 0=停用；不能停用当前登录账号")
     @PostMapping("/{id}/status")
     @SaCheckPermission(value = "system:admin:status", type = "admin")
+    @AuditLog(AuditAction.ADMIN_STATUS)
     public Result<Void> updateStatus(@Parameter(description = "管理员 id") @PathVariable Long id,
                                      @Parameter(description = "目标状态：1=启用 0=停用") @RequestParam int status) {
         EnableStatus targetStatus = EnableStatus.of(status);

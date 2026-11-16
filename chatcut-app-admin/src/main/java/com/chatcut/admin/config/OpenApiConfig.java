@@ -1,4 +1,4 @@
-package com.chatcut.admin.system.config;
+package com.chatcut.admin.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -9,13 +9,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Swagger / OpenAPI 配置（springdoc-openapi）。
- * 联调入口：
- *   - knife4j 增强页: http://127.0.0.1:8082/doc.html
- *   - Swagger UI: http://127.0.0.1:8082/swagger-ui/index.html
- *   - OpenAPI JSON: http://127.0.0.1:8082/v3/api-docs
- * 先调 /auth/login 拿 tokenValue，再点右上角 Authorize 输入 token（自动加 Bearer 前缀）。
- * 测试/生产环境通过 Nacos 配置把 springdoc.api-docs.enabled / swagger-ui.enabled 关成 false。
+ * Swagger / OpenAPI 配置（springdoc-openapi），服务级，与业务域无关。
+ *
+ * <p>联调入口（本机 9101 端口）：</p>
+ * <ul>
+ *   <li>knife4j 增强页：{@code http://127.0.0.1:9101/doc.html}</li>
+ *   <li>Swagger UI：{@code http://127.0.0.1:9101/swagger-ui/index.html}</li>
+ *   <li>OpenAPI JSON：{@code http://127.0.0.1:9101/v3/api-docs}</li>
+ * </ul>
+ * <p>先调 {@code /auth/login} 拿 tokenValue，再点右上角 Authorize 输入 token（自动加 Bearer 前缀）。
+ * 测试/生产环境通过 Nacos 配置把 {@code springdoc.api-docs.enabled} / {@code swagger-ui.enabled} 关成 false。</p>
  */
 @Configuration
 public class OpenApiConfig {

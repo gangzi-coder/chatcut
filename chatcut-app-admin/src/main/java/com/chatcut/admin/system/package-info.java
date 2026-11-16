@@ -8,5 +8,7 @@
  *   <li>{@code service} —— 业务逻辑与事务；DO 只在 service 内部使用，禁止透出到 controller；</li>
  *   <li>{@code controller} —— 参数校验、权限注解、分布式锁入口；请求方式只允许 GET / POST。</li>
  * </ul>
+ *
+ * <p>域内不放 {@code @Configuration}：Swagger、密码编码器这类服务级装配统一放 {@code com.chatcut.admin.config}。</p>
  */
 package com.chatcut.admin.system;

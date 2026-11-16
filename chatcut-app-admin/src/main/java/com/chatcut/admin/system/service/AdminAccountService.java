@@ -2,13 +2,14 @@ package com.chatcut.admin.system.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.chatcut.admin.audit.support.AuditContext;
+import com.chatcut.admin.system.model.req.AdminCreateReq;
+import com.chatcut.admin.system.model.resp.AdminListResp;
+import com.chatcut.admin.system.repository.entity.SysAdminEntity;
+import com.chatcut.admin.system.repository.entity.SysRoleEntity;
 import com.chatcut.admin.system.repository.mapper.AdminMapper;
 import com.chatcut.admin.system.repository.mapper.AdminRoleMapper;
 import com.chatcut.admin.system.repository.mapper.RoleMapper;
-import com.chatcut.admin.system.model.req.AdminCreateReq;
-import com.chatcut.admin.system.repository.entity.SysAdminEntity;
-import com.chatcut.admin.system.repository.entity.SysRoleEntity;
-import com.chatcut.admin.system.model.resp.AdminListResp;
 import com.chatcut.common.core.domain.PageResult;
 import com.chatcut.common.core.enums.EnableStatus;
 import com.chatcut.common.core.exception.BizException;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -36,11 +38,13 @@ public class AdminAccountService {
             throw new BizException(CommonErrorCode.PARAM_INVALID, "用户名已存在");
         }
         List<Long> roleIds = req.getRoleIds() == null ? List.of() : req.getRoleIds().stream().distinct().toList();
+        List<String> roleNames = new ArrayList<>(roleIds.size());
         for (Long roleId : roleIds) {
             SysRoleEntity role = roleMapper.selectById(roleId);
             if (role == null || !EnableStatus.isEnabled(role.getStatus())) {
                 throw new BizException(CommonErrorCode.NOT_FOUND, "角色不存在或已停用");
             }
+            roleNames.add(role.getRoleName());
         }
         SysAdminEntity admin = new SysAdminEntity();
         admin.setUsername(req.getUsername());
@@ -49,6 +53,12 @@ public class AdminAccountService {
         admin.setStatus(EnableStatus.ENABLED.getCode());
         adminMapper.insert(admin);
         roleIds.forEach(roleId -> adminRoleMapper.insert(admin.getId(), roleId));
+
+        // 审计：新增类只存 after 快照；入参里的明文密码由切面脱敏，这里天然不含密码
+        AuditContext.target("admin", admin.getId(), admin.getUsername());
+        AuditContext.captureAfter(admin);
+        AuditContext.content("创建管理员 " + admin.getUsername()
+                + (roleNames.isEmpty() ? "（未分配角色）" : "（角色：" + String.join("、", roleNames) + "）"));
         return admin.getId();
     }
 
@@ -75,6 +85,8 @@ public class AdminAccountService {
     /** 启用/停用管理员。锁在 controller 入口；停用自己直接拒绝。 */
     @Transactional(rollbackFor = Exception.class)
     public void updateStatus(Long id, EnableStatus status, Long operatorId) {
+        // 先登记对象 ID：即便后续校验失败，审计也能定位「试图对谁操作」
+        AuditContext.target("admin", id, null);
         if (id.equals(operatorId) && status == EnableStatus.DISABLED) {
             throw new BizException(CommonErrorCode.PARAM_INVALID, "不能停用当前登录账号");
         }
@@ -82,8 +94,12 @@ public class AdminAccountService {
         if (admin == null) {
             throw new BizException(CommonErrorCode.NOT_FOUND, "管理员不存在");
         }
+        AuditContext.target("admin", admin.getId(), admin.getUsername());
+        AuditContext.captureBefore(admin);
         admin.setStatus(status.getCode());
         adminMapper.updateById(admin);
+        AuditContext.captureAfter(admin);
+        AuditContext.content((status == EnableStatus.ENABLED ? "启用管理员 " : "停用管理员 ") + admin.getUsername());
     }
 
     private AdminListResp toResp(SysAdminEntity a) {

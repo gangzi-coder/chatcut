@@ -39,6 +39,12 @@
     <rocketmq-starter.version>2.3.1</rocketmq-starter.version>
     <aliyun-oss.version>3.17.4</aliyun-oss.version>
     <mapstruct.version>1.6.3</mapstruct.version>
+    <!--
+      显式固定 lombok：Spring Boot 3.3.5 默认带 1.18.34，与本机 JDK 21.0.12 的 javac 内部结构不兼容，
+      命令行编译会报 ExceptionInInitializerError: com.sun.tools.javac.code.TypeTag :: UNKNOWN。
+      IDE 编译不经过 maven-compiler-plugin 的 annotationProcessorPaths，所以只有 CI / mvn 会踩。
+    -->
+    <lombok.version>1.18.48</lombok.version>
     <springdoc.version>2.3.0</springdoc.version>
     <!-- knife4j 增强文档 UI（/doc.html），底层仍用 springdoc 生成 OpenAPI 规范 -->
     <knife4j.version>4.5.0</knife4j.version>

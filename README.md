@@ -16,9 +16,9 @@ chatcut
 │   ├── common-oss               OSS 客户端、签名 URL
 │   ├── common-security-core     Sa-Token 双账号体系 + 内部签名（网关共用）
 │   └── common-security-web      注解鉴权拦截器、内部签名校验过滤器
-├── chatcut-gateway              8083 路由 + token 粗校验 + 身份注入
-├── chatcut-app-api              8081 C 端业务
-└── chatcut-app-admin            8082 管理端
+├── chatcut-gateway              9001 路由 + token 粗校验 + 身份注入
+├── chatcut-app-api              9201 C 端业务
+└── chatcut-app-admin            9101 管理端
 ```
 
 ## 本地启动
@@ -26,9 +26,9 @@ chatcut
 前置：JDK 17 或 21、Maven 3.9+、MySQL 8、Redis 7、RocketMQ 5、Nacos 3.x
 （本机为 Nacos 3.3.0 Docker：控制台 `8080`、OpenAPI `8848`、gRPC `9848`）。
 
-> 必须用 JDK 17/21 跑 Maven。本机若 `mvn -v` 显示的是 JDK 24，Lombok 会报
-> `Fatal error compiling: com.sun.tools.javac.code.TypeTag :: UNKNOWN`，
-> 先 `export JAVA_HOME=$(/usr/libexec/java_home -v 21)` 再编译。
+> 需要 JDK 17 或 21 跑 Maven。根 pom 已把 lombok 固定到 `1.18.48`
+> （Spring Boot 3.3.5 默认带的 1.18.34 在 JDK 21.0.12 上编译会报
+> `TypeTag :: UNKNOWN`，只有 mvn 构建会踩，IDE 编译不受影响）。
 
 ```bash
 # 0. 指定 JDK（装在 /Library/Java 或 sdkman 的机器上按实际路径改）
@@ -48,9 +48,9 @@ java -jar chatcut-app-admin/target/chatcut-app-admin-1.0.0-SNAPSHOT.jar
 java -jar chatcut-gateway/target/chatcut-gateway-1.0.0-SNAPSHOT.jar
 
 # 4. 冒烟
-curl http://127.0.0.1:8081/internal/health     # 直连 api
-curl http://127.0.0.1:8083/api/internal/health # 经网关（需登录，白名单仅 /api/auth/**）
-curl http://127.0.0.1:8083/actuator/health
+curl http://127.0.0.1:9201/internal/health     # 直连 api
+curl http://127.0.0.1:9001/api/internal/health # 经网关（需登录，白名单仅 /api/auth/**）
+curl http://127.0.0.1:9001/actuator/health
 ```
 
 > 管理端表结构与初始数据在 `chatcut-app-admin/src/main/resources/db/migration/V1__admin_rbac.sql`，
@@ -63,7 +63,7 @@ curl http://127.0.0.1:8083/actuator/health
 >
 > 冒烟登录：
 > ```bash
-> curl -X POST http://127.0.0.1:8082/auth/login \
+> curl -X POST http://127.0.0.1:9101/auth/login \
 >   -H 'Content-Type: application/json' -d '{"username":"admin","password":"chat@@cut"}'
 > ```
 
@@ -188,8 +188,8 @@ nacos:
 
 **④ 控制台端口冲突**
 
-Nacos 3.x 控制台默认监听 `8080`，早期版本与本工程网关撞车。现在网关已挪到 **8083**，
-两者可以共存：控制台继续用 `http://localhost:8080`，网关 `http://localhost:8083`。
+Nacos 3.x 控制台默认监听 `8080`，本工程网关在 **9001**，两者不冲突：
+控制台继续用 `http://localhost:8080`，网关 `http://localhost:9001`。
 如果还想把控制台也挪开，改 `nacos-docker/example/standalone-derby.yaml` 的
 `"8080:8080"` 为 `"8088:8080"` 后 `docker compose up -d` 即可（数据在 volume 里不会丢）。
 
@@ -232,15 +232,16 @@ java -jar chatcut-app-admin/target/chatcut-app-admin-1.0.0-SNAPSHOT.jar
 | 白名单 | 只写具体路径（`/auth/login`），**禁止 `/auth/**` 这种前缀**——会把 `/auth/me`、`/auth/logout` 一起放行，未登录也能进且身份为 null；新增免登录接口必须显式加一行 |
 | 双账号体系 | 服务用哪套 StpLogic 由 `chatcut.security.type` 决定（api=user，**admin 必须配 admin**）；漏配会让 admin 拿 C 端体系校验 token，Redis 里明明有 token 却一律判"token 无效"→ 所有管理端接口 401。同理 `@SaCheckPermission` 必须写 `type = "admin"`，注解默认走的是 login 体系 |
 | 幂等 | 写接口 `@Idempotent`；MQ 消费 `message_id` + DB 唯一键 |
+| 审计留痕 | 后台写操作在 controller 方法上加 `@AuditLog(AuditAction.X)`，落 `sys_audit_log`（谁/何时/从哪/对谁/做了什么/结果）+ `sys_audit_log_change`（字段级：旧值→新值）。切面只采操作者、IP/UA、调用方、入参、结果、耗时；对象、摘要、前后快照由 service 用 `AuditContext`（`target` / `content` / `captureBefore` / `captureAfter` / `collectionChange`）补。快照字段由实体上的 `@AuditField` **白名单**决定（密码哈希等不加注解即永不入内），入参按字段名黑名单脱敏。写入用 `REQUIRES_NEW` 独立事务：**业务回滚也留痕**（记录的是「发生过这次尝试」），审计失败只降级 ERROR 日志不阻断业务。表只 INSERT，无改删接口，查询走 `system:audit:list` / `system:audit:detail` |
 | 日志 | 必带 traceId；禁止打印 token、手机号明文、AK/SK |
 
 ## 下一步（按顺序）
 
-1. ~~admin 端接 RBAC~~ 已完成：`V1__admin_rbac.sql` 建表 + 14 条权限 + `super_admin` + `admin/chat@@cut`，接口按细粒度 key 鉴权（`system:admin:list` / `system:role:update` 等）；
+1. ~~admin 端接 RBAC~~ 已完成：`V1__admin_rbac.sql` 建表 + 17 条权限 + `super_admin` + `admin/chat@@cut`，接口按细粒度 key 鉴权（`system:admin:list` / `system:role:update` 等）；同脚本含审计表 `sys_audit_log` / `sys_audit_log_change`；
 2. 认证闭环：`auth` 包下实现短信登录 + `StpUserUtil.login()`，配 `application-local.yml`；
 3. 任务闭环：`task` 包下实现 `biz_task` 状态机与 `chatcut-task-dispatch` 消费；
 4. 文件闭环：`file` 包下 STS 下发 + `complete` 校验；
-5. C 端表结构：`db_auth` / `db_task` 建表 SQL 按 `V2__`、`V3__` 顺序编号往后加，不改已执行过的脚本。
+5. C 端表结构：`db_auth` / `db_task` 建表 SQL **人工执行**（项目未接 Flyway），新表直接追加到对应的初始化脚本里，保持 `CREATE TABLE IF NOT EXISTS` + 固定 ID 先删后插，保证可重复执行。
 
 ## 明确不做
 

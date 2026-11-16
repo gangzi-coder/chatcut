@@ -5,7 +5,6 @@ import com.chatcut.admin.system.model.req.AdminLoginReq;
 import com.chatcut.admin.system.model.resp.AdminProfileResp;
 import com.chatcut.admin.system.service.AdminAuthService;
 import com.chatcut.common.core.domain.Result;
-import com.chatcut.common.security.StpAdminUtil;
 import com.chatcut.common.security.web.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,7 +30,7 @@ public class AdminAuthController {
     @Operation(summary = "登出")
     @PostMapping("/logout")
     public Result<Void> logout() {
-        StpAdminUtil.logout();
+        authService.logout();
         return Result.ok();
     }
 

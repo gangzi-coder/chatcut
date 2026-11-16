@@ -1,5 +1,8 @@
 package com.chatcut.admin.system.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.chatcut.admin.audit.annotation.AuditAction;
+import com.chatcut.admin.audit.annotation.AuditLog;
 import com.chatcut.admin.system.model.req.RoleSaveReq;
 import com.chatcut.admin.system.model.resp.PermissionResp;
 import com.chatcut.admin.system.model.resp.RoleDetailResp;
@@ -8,7 +11,6 @@ import com.chatcut.admin.system.service.RoleService;
 import com.chatcut.common.core.domain.Result;
 import com.chatcut.common.core.enums.EnableStatus;
 import com.chatcut.common.redis.lock.DistributedLock;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,6 +53,7 @@ public class RoleController {
     @Operation(summary = "创建角色", description = "按 roleKey 加分布式锁，防止并发创建同一标识")
     @PostMapping("/roles")
     @SaCheckPermission(value = "system:role:create", type = "admin")
+    @AuditLog(AuditAction.ROLE_CREATE)
     public Result<Map<String, Long>> createRole(@Valid @RequestBody RoleSaveReq req) {
         Long id = distributedLock.execute("role:create", req.getRoleKey(),
                 () -> roleService.create(req));
@@ -60,6 +63,7 @@ public class RoleController {
     @Operation(summary = "更新角色", description = "全量更新字段与权限绑定；按角色 id 加锁，与启停接口互斥")
     @PostMapping("/roles/{id}")
     @SaCheckPermission(value = "system:role:update", type = "admin")
+    @AuditLog(AuditAction.ROLE_UPDATE)
     public Result<Void> updateRole(@Parameter(description = "角色 id") @PathVariable Long id, @Valid @RequestBody RoleSaveReq req) {
         distributedLock.execute("role:write", id, () -> {
             roleService.update(id, req);
@@ -71,6 +75,7 @@ public class RoleController {
     @Operation(summary = "启用/停用角色", description = "status: 1=启用 0=停用；按角色 id 加锁，与更新接口互斥")
     @PostMapping("/roles/{id}/status")
     @SaCheckPermission(value = "system:role:status", type = "admin")
+    @AuditLog(AuditAction.ROLE_STATUS)
     public Result<Void> status(@Parameter(description = "角色 id") @PathVariable Long id,
                                @Parameter(description = "目标状态：1=启用 0=停用") @RequestParam int status) {
         EnableStatus targetStatus = EnableStatus.of(status);

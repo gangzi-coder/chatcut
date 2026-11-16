@@ -1,16 +1,19 @@
 -- ============================================================
--- ChatCut 管理端 RBAC 初始化
+-- ChatCut 管理端 RBAC + 审计日志初始化
 --   * 表结构：sys_admin / sys_role / sys_permission / sys_admin_role / sys_role_permission
---   * 种子数据：14 条权限（3 个菜单 + 11 个接口）、1 个超级管理员角色、1 个管理员账号
+--             + sys_audit_log / sys_audit_log_change（审计，只允许 INSERT）
+--   * 种子数据：17 条权限（4 个菜单 + 13 个接口）、1 个超级管理员角色、1 个管理员账号
 --   * 执行方式：项目未接 Flyway 自动迁移，由人工执行
 --       mysql -h<host> -u<user> -p chatcut_admin < V1__admin_rbac.sql
---   * 可重复执行：建表用 IF NOT EXISTS，种子数据按固定 ID 先删后插
+--   * 可重复执行：建表用 IF NOT EXISTS，种子数据按固定 ID 先删后插；
+--     **审计表不参与重跑清理**——那是证据数据，任何情况下都不能被脚本删掉
 --
 -- 固定 ID 规划（便于人工排查，全部 18 位）：
 --   800000000000000001 ~ 0009      一级菜单
 --   80000000000000001x             管理员模块子权限
 --   80000000000000002x             角色模块子权限
 --   80000000000000003x             权限模块子权限
+--   80000000000000004x             审计日志模块子权限
 --   900000000000000001             内置角色 super_admin
 --   900000000000000101             内置管理员 admin
 -- 权限 key 必须与 controller 上 @SaCheckPermission 的值逐字一致。
@@ -80,6 +83,67 @@ CREATE TABLE IF NOT EXISTS sys_role_permission (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='角色与权限关联；一个角色可拥有多个权限';
 
 -- ------------------------------------------------------------
+-- 审计日志（append-only）
+--   主表回答「谁在何时从哪、对什么对象、做了什么、结果如何」；
+--   明细表按字段展开「具体改了什么」，支持反查某字段的变更历史。
+--   两张表都只有 INSERT 通道：代码里不提供 update/delete，生产库账号也只授
+--   SELECT/INSERT，任何删除都走 DBA 审批。
+--   注意：这里刻意不建 deleted / version / updated_at 列——审计记录不允许被修改。
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS sys_audit_log (
+  id             BIGINT       NOT NULL COMMENT '主键，雪花 ID' PRIMARY KEY,
+  trace_id       VARCHAR(32)  NOT NULL COMMENT '链路 ID，与业务日志互查',
+
+  operator_id    BIGINT       NULL COMMENT '操作者 ID；登录失败等未登录场景为空',
+  operator_name  VARCHAR(64)  NULL COMMENT '操作者用户名（冗余快照，账号改名/删除后仍可定责）',
+  operator_ip    VARCHAR(64)  NOT NULL COMMENT '真实 IP（X-Forwarded-For 第一段）',
+  operator_ua    VARCHAR(255) NULL COMMENT 'User-Agent，异常登录排查用',
+  caller         VARCHAR(32)  NOT NULL COMMENT '调用方：chatcut-gateway / direct',
+
+  module         VARCHAR(32)  NOT NULL COMMENT '模块：管理员 / 角色 / 认证',
+  action         VARCHAR(32)  NOT NULL COMMENT '动作码，稳定枚举，供程序筛选',
+  action_name    VARCHAR(64)  NOT NULL COMMENT '动作中文名，供人阅读',
+
+  target_type    VARCHAR(32)  NULL COMMENT '对象类型：admin / role',
+  target_id      VARCHAR(64)  NULL COMMENT '对象 ID',
+  target_name    VARCHAR(128) NULL COMMENT '对象名称快照：admin→用户名，role→角色名',
+
+  content        VARCHAR(500) NOT NULL COMMENT '操作摘要，列表页直接展示',
+  before_data    JSON         NULL COMMENT '变更前快照（字段白名单，密码类永不入内）',
+  after_data     JSON         NULL COMMENT '变更后快照（字段白名单）',
+  changed_fields VARCHAR(500) NULL COMMENT '变更字段清单，逗号分隔：status,roleName',
+  detail         JSON         NULL COMMENT '非实体类操作的补充明细（如权限增删清单）',
+
+  request_uri    VARCHAR(255) NOT NULL COMMENT '请求路径',
+  http_method    VARCHAR(16)  NOT NULL COMMENT 'HTTP 方法',
+  request_data   JSON         NULL COMMENT '入参快照（字段名黑名单脱敏）',
+  result         TINYINT      NOT NULL COMMENT '结果：1成功 2业务拒绝 3系统异常',
+  error_code     INT          NULL COMMENT '失败时的业务错误码',
+  error_msg      VARCHAR(500) NULL COMMENT '失败原因',
+  cost_ms        INT          NOT NULL COMMENT '耗时（毫秒）',
+  op_time        DATETIME     NOT NULL COMMENT '操作时间',
+  KEY idx_audit_operator (operator_id, op_time),
+  KEY idx_audit_module (module, op_time),
+  KEY idx_audit_target (target_type, target_id),
+  KEY idx_audit_trace (trace_id),
+  KEY idx_audit_time (op_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='管理端操作审计主表，只允许 INSERT';
+
+CREATE TABLE IF NOT EXISTS sys_audit_log_change (
+  id           BIGINT       NOT NULL COMMENT '主键，雪花 ID' PRIMARY KEY,
+  audit_id     BIGINT       NOT NULL COMMENT '关联 sys_audit_log.id',
+  field_name   VARCHAR(64)  NOT NULL COMMENT '字段名：status / roleName / permissions',
+  field_label  VARCHAR(64)  NOT NULL COMMENT '字段中文名：状态 / 角色名称 / 权限',
+  old_value    TEXT         NULL COMMENT '变更前原始值',
+  new_value    TEXT         NULL COMMENT '变更后原始值',
+  old_display  VARCHAR(500) NULL COMMENT '变更前展示值（字典已转义，如「停用」）',
+  new_display  VARCHAR(500) NULL COMMENT '变更后展示值（如「启用」）',
+  changed_type VARCHAR(16)  NOT NULL COMMENT '变更类型：UPDATE / ADD / REMOVE',
+  KEY idx_audit_change_audit (audit_id),
+  KEY idx_audit_change_field (field_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='审计变更明细，一行一个字段';
+
+-- ------------------------------------------------------------
 -- 清理旧的种子数据（按固定 ID 删除，保证脚本可重复执行）
 -- 只重置内置角色/账号及其授权，自建角色与账号不受影响。
 -- 若库里已有别人手工调整过的内置账号密码，重跑会把它重置回 chat@@cut。
@@ -116,7 +180,11 @@ INSERT INTO sys_permission(id,parent_id,permission_key,permission_name,permissio
 (800000000000000026,800000000000000002,'system:role:status','启用/停用角色','API','/system/roles/{id}/status','POST',26,1,0,0),
 -- 权限管理
 (800000000000000003,0,'system:permission:menu','权限管理','MENU','/system/permissions',NULL,30,1,0,0),
-(800000000000000031,800000000000000003,'system:permission:list','权限项列表','API','/system/permissions','GET',31,1,0,0);
+(800000000000000031,800000000000000003,'system:permission:list','权限项列表','API','/system/permissions','GET',31,1,0,0),
+-- 审计日志（只读：没有新增/修改/删除权限，审计记录不允许通过接口改动）
+(800000000000000004,0,'system:audit:menu','审计日志','MENU','/system/audits',NULL,40,1,0,0),
+(800000000000000041,800000000000000004,'system:audit:list','审计日志列表','API','/system/audits','GET',41,1,0,0),
+(800000000000000042,800000000000000004,'system:audit:detail','审计日志详情','API','/system/audits/{id}','GET',42,1,0,0);
 
 -- ------------------------------------------------------------
 -- 内置角色：super_admin（中文名“超级管理员”）
