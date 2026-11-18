@@ -10,12 +10,15 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Swagger / OpenAPI 配置（springdoc-openapi）。
- * 联调入口：
- *   - knife4j 增强页: http://127.0.0.1:8081/doc.html
- *   - Swagger UI:     http://127.0.0.1:8081/swagger-ui/index.html
- *   - OpenAPI JSON:   http://127.0.0.1:8081/v3/api-docs
- * 先调 /auth/login 拿 tokenValue，再点右上角 Authorize 输入 token（自动加 Bearer 前缀）。
- * 测试/生产环境通过 Nacos 配置把 springdoc.api-docs.enabled / swagger-ui.enabled 关成 false。
+ * 联调入口（本机 9201 端口）：
+ * <ul>
+ *   <li>knife4j 增强页：{@code http://127.0.0.1:9201/doc.html}</li>
+ *   <li>Swagger UI：{@code http://127.0.0.1:9201/swagger-ui/index.html}</li>
+ *   <li>OpenAPI JSON：{@code http://127.0.0.1:9201/v3/api-docs}</li>
+ * </ul>
+ * 先调 {@code /auth/login} 拿 tokenValue，再点右上角 Authorize 输入 token（自动加 Bearer 前缀）。
+ * 经网关访问时前缀为 /api/**（网关白名单已放行 /api/doc.html 等文档路径）。
+ * 测试/生产环境通过 Nacos 配置把 {@code springdoc.api-docs.enabled} / {@code swagger-ui.enabled} 关成 false。
  */
 @Configuration
 public class OpenApiConfig {
