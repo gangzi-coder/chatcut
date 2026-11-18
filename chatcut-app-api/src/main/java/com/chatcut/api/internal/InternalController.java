@@ -1,4 +1,4 @@
-package com.chatcut.api.common;
+package com.chatcut.api.internal;
 
 import com.chatcut.common.core.domain.Result;
 import com.chatcut.common.security.web.CurrentUser;
