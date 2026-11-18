@@ -16,7 +16,7 @@
   <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>chatcut</name>
-  <description>ChatCut backend services - gateway / app-api / app-admin</description>
+  <description>ChatCut backend services - gateway / app-api / app-admin / app-enterprise / app-portal</description>
 
   <modules>
     <module>chatcut-dependencies</module>
@@ -24,6 +24,8 @@
     <module>chatcut-gateway</module>
     <module>chatcut-app-api</module>
     <module>chatcut-app-admin</module>
+    <module>chatcut-app-enterprise</module>
+    <module>chatcut-app-portal</module>
   </modules>
 
   <properties>

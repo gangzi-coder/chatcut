@@ -1,0 +1,44 @@
+# ============================================================
+# Nacos 配置
+#   namespace : chatcut-local（填命名空间的 ID，不是名字）
+#   group     : DEFAULT_GROUP
+#   dataId    : chatcut-app-enterprise-local.yaml
+#   format    : YAML
+#
+# enterprise（B 端）的私有中间件配置：数据源 + MQ。
+# 独立库 chatcut_enterprise，与 C 端（chatcut）、后台（chatcut_admin）分开，便于以后拆库。
+# 本地库需先建：CREATE DATABASE chatcut_enterprise DEFAULT CHARACTER SET utf8mb4;
+# ============================================================
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DB:chatcut_enterprise}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    # 本地 Docker MySQL 只有 root 可用；测试/生产在对应环境用最小权限账号覆盖。
+    # 注意：源文件与 Nacos 中的实际值必须保持一致，曾出现过两者漂移导致连接失败。
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    hikari:
+      pool-name: chatcut-enterprise-pool
+      maximum-pool-size: 8
+      minimum-idle: 2
+      connection-timeout: 3000
+      validation-timeout: 3000
+      idle-timeout: 600000
+      max-lifetime: 1200000
+      # 保活：每 30s 发一次心跳，避免远程/办公网的空闲连接被 NAT 回收后串到下一次请求上。
+      keepalive-time: 30000
+      # 首次取连接失败时不 fail-fast：池不会因启动瞬间的网络闪断直接抛异常。
+      initialization-fail-timeout: -1
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAMESRV:127.0.0.1:9876}
+  producer:
+    group: chatcut-app-enterprise-producer
+    send-message-timeout: 3000
+
+# ---------- 业务开关 ----------
+chatcut:
+  mq:
+    # 本地没起 RocketMQ → false；测试/生产必须 true。
+    enabled: false

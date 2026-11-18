@@ -1,0 +1,59 @@
+## enterprise 端口使用 9301-9400
+server:
+  port: 9301
+  shutdown: graceful
+  max-http-request-header-size: 32KB
+
+spring:
+  application:
+    name: chatcut-app-enterprise
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  # Nacos 配置中心：共享配置 + 本服务配置，缺失不阻断启动
+  config:
+    import:
+      - optional:nacos:chatcut-common-${spring.profiles.active}.yaml
+      - optional:nacos:chatcut-app-enterprise-${spring.profiles.active}.yaml
+  cloud:
+    nacos:
+      # 地址 / 命名空间 / 分组都由 profile 推导，环境清单见文件末尾 nacos.* 段
+      discovery:
+        server-addr: ${nacos.server-addr}
+        namespace: ${nacos.namespace}
+        group: ${nacos.group}
+        username: ${nacos.username}
+        password: ${nacos.password}
+      config:
+        server-addr: ${nacos.server-addr}
+        namespace: ${nacos.namespace}
+        group: ${nacos.group}
+        file-extension: yaml
+        # Nacos 3.x 默认开启鉴权，不带账号密码会 403 / gRPC 连接被拒
+        username: ${nacos.username}
+        password: ${nacos.password}
+
+# ---------- 业务开关 ----------
+chatcut:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:*}
+  security:
+    # B 端企业账号体系（user / enterprise / admin / none 四选一）
+    type: enterprise
+    # 为空时跳过内部签名校验，仅限本地；测试/生产必须配置
+    internal-secret: ${INTERNAL_SECRET:}
+
+nacos:
+  group: DEFAULT_GROUP
+  username: ${NACOS_USERNAME:nacos}
+  password: ${NACOS_PASSWORD:nacos}
+  server-addr: ${nacos.endpoints.${spring.profiles.active}}
+  namespace: ${nacos.namespaces.${spring.profiles.active}}
+  endpoints:
+    local: 127.0.0.1:8848
+    dev: nacos-dev.chatcut.internal:8848
+    prod: nacos.chatcut.internal:8848
+  namespaces:
+    local: 1898c274-9625-4117-ba85-e3757117deeb
+    # 建好 dev / prod 命名空间后把真实 ID 替换进来
+    dev: 00000000-0000-0000-0000-000000000000
+    prod: 00000000-0000-0000-0000-000000000000

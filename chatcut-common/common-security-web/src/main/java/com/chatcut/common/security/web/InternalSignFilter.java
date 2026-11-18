@@ -23,6 +23,7 @@ import java.io.IOException;
 public class InternalSignFilter extends OncePerRequestFilter {
 
     public static final String H_USER = "X-User-Id";
+    public static final String H_ENTERPRISE = "X-Enterprise-Id";
     public static final String H_ADMIN = "X-Admin-Id";
     public static final String H_TS = "X-Request-Ts";
     public static final String H_SIGN = "X-Internal-Sign";
@@ -39,15 +40,16 @@ public class InternalSignFilter extends OncePerRequestFilter {
         }
 
         String userId = request.getHeader(H_USER);
+        String enterpriseId = request.getHeader(H_ENTERPRISE);
         String adminId = request.getHeader(H_ADMIN);
         String ts = request.getHeader(H_TS);
         String sign = request.getHeader(H_SIGN);
 
-        if (StringUtils.hasText(userId) || StringUtils.hasText(adminId)) {
+        if (StringUtils.hasText(userId) || StringUtils.hasText(enterpriseId) || StringUtils.hasText(adminId)) {
             boolean valid = StringUtils.hasText(ts)
                     && StringUtils.hasText(sign)
                     && Math.abs(System.currentTimeMillis() - Long.parseLong(ts)) < 60_000
-                    && InternalSign.verify(userId, adminId, ts, sign, secret);
+                    && InternalSign.verify(userId, enterpriseId, adminId, ts, sign, secret);
             if (!valid) {
                 logger.warn("invalid internal sign, uri=" + request.getRequestURI());
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

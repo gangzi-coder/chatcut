@@ -46,6 +46,18 @@ spring:
             - Path=/admin/**
           filters:
             - StripPrefix=1
+        - id: app-enterprise
+          uri: lb://chatcut-app-enterprise
+          predicates:
+            - Path=/enterprise/**
+          filters:
+            - StripPrefix=1
+        - id: app-portal
+          uri: lb://chatcut-app-portal
+          predicates:
+            - Path=/portal/**
+          filters:
+            - StripPrefix=1
       httpclient:
         connect-timeout: 2000
         response-timeout: 30s

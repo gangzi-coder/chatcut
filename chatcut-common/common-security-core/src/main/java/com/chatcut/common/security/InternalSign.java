@@ -9,6 +9,9 @@ import java.util.HexFormat;
 /**
  * 网关 → 业务服务的内部身份签名。
  * 只带 header 不带签名等于谁都能伪造 X-User-Id，这一步不能省。
+ *
+ * <p>三套身份互斥（user / enterprise / admin 只会有一个非空），
+ * 但签名串按固定顺序拼接三者，任何身份变化都会导致签名不同。</p>
  */
 public final class InternalSign {
 
@@ -17,8 +20,8 @@ public final class InternalSign {
     private InternalSign() {
     }
 
-    public static String sign(String userId, String adminId, String timestamp, String secret) {
-        String raw = nullToEmpty(userId) + "|" + nullToEmpty(adminId) + "|" + timestamp;
+    public static String sign(String userId, String enterpriseId, String adminId, String timestamp, String secret) {
+        String raw = nullToEmpty(userId) + "|" + nullToEmpty(enterpriseId) + "|" + nullToEmpty(adminId) + "|" + timestamp;
         try {
             Mac mac = Mac.getInstance(ALGO);
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), ALGO));
@@ -28,8 +31,8 @@ public final class InternalSign {
         }
     }
 
-    public static boolean verify(String userId, String adminId, String timestamp, String sign, String secret) {
-        String expected = sign(userId, adminId, timestamp, secret);
+    public static boolean verify(String userId, String enterpriseId, String adminId, String timestamp, String sign, String secret) {
+        String expected = sign(userId, enterpriseId, adminId, timestamp, secret);
         return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), sign.getBytes(StandardCharsets.UTF_8));
     }
 

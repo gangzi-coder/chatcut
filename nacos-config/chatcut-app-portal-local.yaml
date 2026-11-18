@@ -1,0 +1,32 @@
+# ============================================================
+# Nacos 配置
+#   namespace : chatcut-local（填命名空间的 ID，不是名字）
+#   group     : DEFAULT_GROUP
+#   dataId    : chatcut-app-portal-local.yaml
+#   format    : YAML
+#
+# portal（官网门户）的私有中间件配置：只有数据源。
+# 官网免登录只读，查的是后台（chatcut_admin）配置的展示数据，因此连 chatcut_admin 库。
+# 生产环境务必换成只读账号（仅 SELECT），并把可访问范围限定到官网用到的几张表。
+# ============================================================
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DB:chatcut_admin}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    # 本地 Docker MySQL 只有 root 可用；测试/生产用只读账号覆盖（见文件头注释）。
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    hikari:
+      pool-name: chatcut-portal-pool
+      maximum-pool-size: 4
+      minimum-idle: 1
+      connection-timeout: 3000
+      validation-timeout: 3000
+      idle-timeout: 600000
+      max-lifetime: 1200000
+      keepalive-time: 30000
+      initialization-fail-timeout: -1
+
+# ---------- 业务开关 ----------
+# portal 无 MQ、无 Redis 会话、无 sa-token；任何写接口都不允许出现在这个服务里。

@@ -1,6 +1,6 @@
 # ChatCut 后端工程骨架
 
-三个服务、一套自建底座，不含任何建表脚本（表结构等接口定稿后再补 `db/sql/`）。
+五个服务、一套自建底座，不含任何建表脚本（表结构等接口定稿后再补 `db/sql/`）。
 
 ## 模块
 
@@ -14,11 +14,13 @@ chatcut
 │   ├── common-redis             Key 规范、分布式锁、@RateLimit、@Idempotent
 │   ├── common-mq                消息外壳、生产者、幂等消费基类
 │   ├── common-oss               OSS 客户端、签名 URL
-│   ├── common-security-core     Sa-Token 双账号体系 + 内部签名（网关共用）
+│   ├── common-security-core     Sa-Token 三账号体系（user/enterprise/admin）+ 内部签名（网关共用）
 │   └── common-security-web      注解鉴权拦截器、内部签名校验过滤器
 ├── chatcut-gateway              9001 路由 + token 粗校验 + 身份注入
-├── chatcut-app-api              9201 C 端业务
-└── chatcut-app-admin            9101 管理端
+├── chatcut-app-api              9201 C 端业务（user 体系）
+├── chatcut-app-admin            9101 管理端（admin 体系，RBAC + 审计）
+├── chatcut-app-enterprise       9301 B 端业务：企业认证、组织/成员/项目协作（enterprise 体系）
+└── chatcut-app-portal           9401 官网门户：免登录只读，查后台配置的展示数据
 ```
 
 ## 本地启动
@@ -42,14 +44,18 @@ source scripts/env-local.sh
 # 不 source 也能跑：application-local.yml 提供了中间件兜底值（profile=local），
 # 但那只是"连不上 Nacos 也能启动"，正常开发请走 Nacos。
 
-# 3. 依次启动（顺序：api/admin 先注册，网关最后）
+# 3. 依次启动（顺序：业务服务先注册，网关最后）
 java -jar chatcut-app-api/target/chatcut-app-api-1.0.0-SNAPSHOT.jar
 java -jar chatcut-app-admin/target/chatcut-app-admin-1.0.0-SNAPSHOT.jar
+java -jar chatcut-app-enterprise/target/chatcut-app-enterprise-1.0.0-SNAPSHOT.jar
+java -jar chatcut-app-portal/target/chatcut-app-portal-1.0.0-SNAPSHOT.jar
 java -jar chatcut-gateway/target/chatcut-gateway-1.0.0-SNAPSHOT.jar
 
 # 4. 冒烟
-curl http://127.0.0.1:9201/internal/health     # 直连 api
-curl http://127.0.0.1:9001/api/internal/health # 经网关（需登录，白名单仅 /api/auth/**）
+curl http://127.0.0.1:9201/internal/health          # 直连 api
+curl http://127.0.0.1:9301/internal/health          # 直连 enterprise
+curl http://127.0.0.1:9001/api/internal/health      # 经网关（需登录）
+curl http://127.0.0.1:9001/portal/internal/health   # 经网关（免登录，/portal/** 全在白名单）
 curl http://127.0.0.1:9001/actuator/health
 ```
 
@@ -58,7 +64,7 @@ curl http://127.0.0.1:9001/actuator/health
 > ```bash
 > mysql -h<host> -u<user> -p chatcut_admin < chatcut-app-admin/src/main/resources/db/migration/V1__admin_rbac.sql
 > ```
-> 脚本会建 5 张表 + 14 条权限（3 菜单 + 11 接口）+ 角色 `super_admin` + 账号 **admin / chat@@cut**（拥有全部权限）。
+> 脚本会建 5 张表 + 17 条权限（3 菜单 + 14 接口）+ 角色 `super_admin` + 账号 **admin / chat@@cut**（拥有全部权限）。
 > 该账号仅限本地联调，上线前必须改密或停用。
 >
 > 冒烟登录：
@@ -75,7 +81,7 @@ curl http://127.0.0.1:9001/actuator/health
 | 公共配置 | mybatis-plus、sa-token、management 基础端点、日志底座、出入参日志、Redis | **Nacos**：`chatcut-common-{profile}.yaml`（只放三个服务共享的） |
 | 服务私有配置 | 数据源、RocketMQ、网关路由日志与 gateway 端点、各服务自己的开关 | **Nacos**：各服务 `chatcut-{服务}-{profile}.yaml` |
 
-三个服务的 `application.yml` 只有 `server` / `spring`（含 `config.import`）/ 服务特有开关 / `nacos` 环境清单；MyBatis-Plus、Sa-Token、management、日志这些跨服务同构的配置统一在 `chatcut-common-{profile}.yaml`，日志文件名用 `${spring.application.name}` 参数化。
+各服务的 `application.yml` 只有 `server` / `spring`（含 `config.import`）/ 服务特有开关 / `nacos` 环境清单；MyBatis-Plus、Sa-Token、management、日志这些跨服务同构的配置统一在 `chatcut-common-{profile}.yaml`，日志文件名用 `${spring.application.name}` 参数化。portal 例外：不依赖 `common-security-web`，没有任何 Sa-Token 配置可消费。
 
 Nacos 样例在 `nacos-config/` 目录，按 profile 改名上传（如 `chatcut-common-test.yaml`）。jar 内不放中间件配置，`optional:` 导入缺失时启动会因拿不到数据源直接失败——这是故意的 fail-fast。
 
@@ -109,16 +115,18 @@ Nacos 样例在 `nacos-config/` 目录，按 profile 改名上传（如 `chatcut
 > **坑点**：命名空间参数要的是 **ID**（那串 UUID），不是名称 `chatcut-local`。
 > 填名字能启动，但拉不到任何配置，报错还很不直观。
 
-**② 分组与 dataId：DEFAULT_GROUP + 4 个 dataId**
+**② 分组与 dataId：DEFAULT_GROUP + 6 个 dataId**
 
-命名空间已经隔离了环境，组内不再分 group。每个命名空间固定 4 个 dataId（YAML 格式）：
+命名空间已经隔离了环境，组内不再分 group。每个命名空间固定 6 个 dataId（YAML 格式）：
 
 | dataId | 内容 | 谁加载 |
 |---|---|---|
-| `chatcut-common-{profile}.yaml` | Redis（会话共享） | 三个服务 |
-| `chatcut-gateway-{profile}.yaml` | 网关私有开关，目前留空 | gateway |
+| `chatcut-common-{profile}.yaml` | Redis（会话共享） | 全部业务服务 + 网关 |
+| `chatcut-gateway-{profile}.yaml` | 网关私有开关（路由日志、gateway 端点） | gateway |
 | `chatcut-app-api-{profile}.yaml` | 数据源 + MQ | app-api |
 | `chatcut-app-admin-{profile}.yaml` | 数据源（`chatcut_admin` 独立库）+ MQ | app-admin |
+| `chatcut-app-enterprise-{profile}.yaml` | 数据源（`chatcut_enterprise` 独立库）+ MQ | app-enterprise |
+| `chatcut-app-portal-{profile}.yaml` | 数据源（连 `chatcut_admin`，生产用只读账号；无 MQ/Redis） | app-portal |
 
 对应 jar 内 `application.yml` 的 `spring.config.import`：
 
@@ -213,8 +221,8 @@ java -jar chatcut-app-admin/target/chatcut-app-admin-1.0.0-SNAPSHOT.jar
 | HTTP 状态码 | 业务失败 = **HTTP 200 + 非 0 code**（按 code 分支）；框架级故障（`SystemException` / 未知异常兜底）= **HTTP 500 + 10999**，网关与监控按状态码即可发现服务异常；鉴权失败见下「鉴权失败」行 |
 | 错误码 | 10xxx 通用 / 20xxx 认证 / 30xxx 用户 / 40xxx 剪辑 / 50xxx AI / 60xxx 文件 / 70xxx 任务 / 80xxx 管理端 |
 | 契约 | 公共枚举放 `common-core` 的 `enums` 包；仅单服务使用的放该服务内；枚举值只增不改 |
-| 身份 | 网关剥离并按 HMAC 重写 `X-User-Id` / `X-Admin-Id`，业务服务用 `InternalSignFilter` 校验 |
-| 取当前用户 | controller 层调 `CurrentUser.userId()`，往下传参，不要在深层到处取 |
+| 身份 | 网关剥离并按 HMAC 重写 `X-User-Id` / `X-Enterprise-Id` / `X-Admin-Id`（三套互斥，只填其一），业务服务用 `InternalSignFilter` 校验 |
+| 取当前用户 | controller 层调 `CurrentUser.userId()` / `CurrentUser.enterpriseId()`，往下传参，不要在深层到处取 |
 | 事务 | 只加在 service 写方法上，`rollbackFor = Exception.class` |
 | 并发 | 多节点的写操作在 **controller 层入口**先套 `DistributedLock`（粒度按业务键：username/id/roleKey），service 内保持 `@Transactional`——跨 bean 调用保证事务在锁内开启，禁止 service 里再拿锁；DB 唯一索引兜底 |
 | Entity 边界 | Entity（原 DO）不出 service 层，controller 只收 Resp |
@@ -230,7 +238,7 @@ java -jar chatcut-app-admin/target/chatcut-app-admin-1.0.0-SNAPSHOT.jar
 | 会话 | Sa-Token 登录态存 **Redis**（`SaTokenDaoRedisJackson`，由 `SaTokenStorageConfig` 注册进 `SaManager`）；三服务共用同一 Redis 实例与 database，禁止退化成内存 `SaTokenDaoDefaultImpl` |
 | 鉴权失败 | 未登录/token 失效 → **HTTP 401 + code 10004**；已登录但缺权限 → **HTTP 403 + code 10002**。由 `common-security-web` 的 `SaTokenExceptionHandler` 处理（优先级最高），**不得落进 `GlobalExceptionHandler` 的 `Exception` 兜底**（那会打成 ERROR 堆栈并回 10999，前端无法跳登录）。网关 `AuthWebFilter` 返回同一套状态码与业务码 |
 | 白名单 | 只写具体路径（`/auth/login`），**禁止 `/auth/**` 这种前缀**——会把 `/auth/me`、`/auth/logout` 一起放行，未登录也能进且身份为 null；新增免登录接口必须显式加一行 |
-| 双账号体系 | 服务用哪套 StpLogic 由 `chatcut.security.type` 决定（api=user，**admin 必须配 admin**）；漏配会让 admin 拿 C 端体系校验 token，Redis 里明明有 token 却一律判"token 无效"→ 所有管理端接口 401。同理 `@SaCheckPermission` 必须写 `type = "admin"`，注解默认走的是 login 体系 |
+| 账号体系 | 三套登录态互不通用：user（C 端）/ enterprise（B 端）/ admin（管理端）。服务用哪套 StpLogic 由 `chatcut.security.type` 决定，取值 `user` / `enterprise` / `admin` / `none`（官网门户免登录用 `none`，不注册拦截器）；配错会让服务拿错体系校验 token，Redis 里明明有 token 却一律判"token 无效"→ 全部接口 401。同理 `@SaCheckPermission` 必须写对 `type`，注解默认走的是 login 体系。网关按路径前缀分流：`/admin/` → admin，`/enterprise/` → enterprise，`/portal/` → 白名单直接放行，其余 → user |
 | 幂等 | 写接口 `@Idempotent`；MQ 消费 `message_id` + DB 唯一键 |
 | 审计留痕 | 后台写操作在 controller 方法上加 `@AuditLog(AuditAction.X)`，落 `sys_audit_log`（谁/何时/从哪/对谁/做了什么/结果）+ `sys_audit_log_change`（字段级：旧值→新值）。切面只采操作者、IP/UA、调用方、入参、结果、耗时；对象、摘要、前后快照由 service 用 `AuditContext`（`target` / `content` / `captureBefore` / `captureAfter` / `collectionChange`）补。快照字段由实体上的 `@AuditField` **白名单**决定（密码哈希等不加注解即永不入内），入参按字段名黑名单脱敏。写入用 `REQUIRES_NEW` 独立事务：**业务回滚也留痕**（记录的是「发生过这次尝试」），审计失败只降级 ERROR 日志不阻断业务。表只 INSERT，无改删接口，查询走 `system:audit:list` / `system:audit:detail` |
 | 日志 | 必带 traceId；禁止打印 token、手机号明文、AK/SK |
@@ -242,6 +250,7 @@ java -jar chatcut-app-admin/target/chatcut-app-admin-1.0.0-SNAPSHOT.jar
 3. 任务闭环：`task` 包下实现 `biz_task` 状态机与 `chatcut-task-dispatch` 消费；
 4. 文件闭环：`file` 包下 STS 下发 + `complete` 校验；
 5. C 端表结构：`db_auth` / `db_task` 建表 SQL **人工执行**（项目未接 Flyway），新表直接追加到对应的初始化脚本里，保持 `CREATE TABLE IF NOT EXISTS` + 固定 ID 先删后插，保证可重复执行。
+6. enterprise / portal 业务：B 端 `chatcut_enterprise` 独立库建表（本地库已建好）；官网 `content` 域的表由 admin 端写入（官网只读查询，注意过滤未发布状态）。
 
 ## 明确不做
 

@@ -1,6 +1,7 @@
 package com.chatcut.common.security.web;
 
 import com.chatcut.common.security.StpAdminUtil;
+import com.chatcut.common.security.StpEnterpriseUtil;
 import com.chatcut.common.security.StpUserUtil;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -38,6 +39,16 @@ public final class CurrentUser {
             return fromHeader;
         }
         Object loginId = StpAdminUtil.logic().getLoginIdDefaultNull();
+        return loginId == null ? null : Long.valueOf(loginId.toString());
+    }
+
+    /** 当前 B 端企业用户 ID；未登录返回 null。 */
+    public static Long enterpriseId() {
+        Long fromHeader = parse(header(InternalSignFilter.H_ENTERPRISE));
+        if (fromHeader != null) {
+            return fromHeader;
+        }
+        Object loginId = StpEnterpriseUtil.logic().getLoginIdDefaultNull();
         return loginId == null ? null : Long.valueOf(loginId.toString());
     }
 
