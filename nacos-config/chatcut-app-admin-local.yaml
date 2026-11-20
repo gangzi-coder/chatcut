@@ -11,17 +11,12 @@
 
 spring:
   datasource:
-    type: com.zaxxer.hikari.HikariDataSource
     dynamic:
-      primary: master
-      strict: true
       datasource:
         master:
-          type: com.zaxxer.hikari.HikariDataSource
-          driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://${spring.datasource.host:127.0.0.1}:3306/chatcut_admin_ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
-          username: ${spring.datasource.username:root}
-          password: ${spring.datasource.password:root}
+          # 账号（driver/username/password）与 primary/strict 继承 chatcut-common-local.yaml，
+          # 这里只写本服务的库和连接池。
+          url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:3306/chatcut_admin_ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
       hikari:
         max-pool-size: 8
         min-idle: 2

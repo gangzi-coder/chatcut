@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 @ConditionalOnExpression("!('ruoyi'.equals('${chatcut.security.type:}'))")
-public class SaTokenExceptionHandler {
+public class SaTokenAuthExceptionHandler {
 
     /**
      * 未登录 / token 无效 / 过期 / 被顶下线。

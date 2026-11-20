@@ -10,24 +10,21 @@
 # 优先级：远程配置 > 本地 jar 配置，本文件中的 key 会覆盖服务 application.yml 的同名 key。
 # ============================================================
 
-datasource:
-  host: ${MYSQL_HOST:127.0.0.1}
-  username: ${MYSQL_USER:root}
-  password: ${MYSQL_PASSWORD:root}
+# 注意：跨 dataId 的 ${...} 占位符引用不解析（实测，Spring Cloud Alibaba config-data），
+# 但属性级合并生效：所有服务统一走 dynamic-datasource，账号类默认值集中在
+# spring.datasource.dynamic.datasource.master.*，各服务 dataId 只写自己的 url 和连接池。
+# ${MYSQL_*:默认值} 是环境变量占位符（始终可见），换环境优先用部署环境变量覆盖。
 
 spring:
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:root}
-    hikari:
-      maximum-pool-size: 8
-      minimum-idle: 2
-      connection-timeout: 3000
-      validation-timeout: 3000
-      idle-timeout: 600000
-      max-lifetime: 1200000
-      keepalive-time: 30000
+    dynamic:
+      primary: master
+      strict: true
+      datasource:
+        master:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          username: ${MYSQL_USER:root}
+          password: ${MYSQL_PASSWORD:root}
   data:
     redis:
       # 网关的 sa-token 会话与业务服务必须指向同一个 Redis 实例、同一个 database，
