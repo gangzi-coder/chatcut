@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.chatcut</groupId>
+    <artifactId>chatcut-common-bom</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <description>
+        chatcut-common-bom chatcut-common 各模块依赖项
+    </description>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- 核心模块 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-core</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 接口文档模块 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-doc</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- excel -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-excel</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 幂等 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-idempotent</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 日志记录 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-log</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 邮件服务 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-mail</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 数据库服务 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-mybatis</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- OSS -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-oss</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 限流 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-ratelimiter</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 缓存服务 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-redis</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- satoken -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-satoken</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 短信模块 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-sms</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- web服务 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-web</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 翻译模块 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-translation</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 脱敏模块 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-sensitive</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 序列化模块 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-json</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 数据库加解密模块 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-encrypt</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- 租户模块 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-tenant</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+            <!-- SSE模块 -->
+            <dependency>
+                <groupId>com.chatcut</groupId>
+                <artifactId>chatcut-common-sse</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+</project>

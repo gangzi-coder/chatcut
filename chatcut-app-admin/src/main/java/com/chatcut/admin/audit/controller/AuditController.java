@@ -5,8 +5,8 @@ import com.chatcut.admin.audit.model.req.AuditLogQueryReq;
 import com.chatcut.admin.audit.model.resp.AuditLogDetailResp;
 import com.chatcut.admin.audit.model.resp.AuditLogResp;
 import com.chatcut.admin.audit.service.AuditQueryService;
-import com.chatcut.common.core.domain.PageResult;
-import com.chatcut.common.core.domain.Result;
+import com.chatcut.common.core.domain.R;
+import com.chatcut.common.mybatis.core.page.TableDataInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,15 +33,15 @@ public class AuditController {
             description = "支持按操作者/模块/动作/对象/结果/时间范围/traceId/调用方筛选。"
                     + "按 traceId 查可确认某次请求是否留痕（网关透传的 traceId 与日志里的一致）")
     @GetMapping
-    @SaCheckPermission(value = "system:audit:list", type = "admin")
-    public Result<PageResult<AuditLogResp>> page(AuditLogQueryReq req) {
-        return Result.ok(auditQueryService.page(req));
+    @SaCheckPermission("system:audit:list")
+    public R<TableDataInfo<AuditLogResp>> page(AuditLogQueryReq req) {
+        return R.ok(auditQueryService.page(req));
     }
 
     @Operation(summary = "审计日志详情", description = "含入参快照、前后快照与字段级变更明细")
     @GetMapping("/{id}")
-    @SaCheckPermission(value = "system:audit:detail", type = "admin")
-    public Result<AuditLogDetailResp> detail(@Parameter(description = "审计记录 id") @PathVariable Long id) {
-        return Result.ok(auditQueryService.detail(id));
+    @SaCheckPermission("system:audit:detail")
+    public R<AuditLogDetailResp> detail(@Parameter(description = "审计记录 id") @PathVariable Long id) {
+        return R.ok(auditQueryService.detail(id));
     }
 }

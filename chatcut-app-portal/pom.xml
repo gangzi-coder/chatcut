@@ -13,14 +13,22 @@
     <description>官网门户服务：免登录只读，查询后台配置的官网展示数据</description>
 
     <dependencies>
-        <!-- 官网完全无登录态：不依赖 common-security-web / sa-token，也不需要 Redis 会话 -->
+        <!-- 官网完全无登录态：不依赖 sa-token，也不需要 Redis 会话 -->
+        <!-- 通用能力统一使用 vendored chatcut-common -->
         <dependency>
             <groupId>com.chatcut</groupId>
-            <artifactId>common-web</artifactId>
+            <artifactId>chatcut-common-core</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.chatcut</groupId>
-            <artifactId>common-mybatis</artifactId>
+            <artifactId>chatcut-common-web</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.chatcut</groupId>
+            <artifactId>chatcut-common-mybatis</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>

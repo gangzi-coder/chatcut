@@ -29,9 +29,17 @@
       <groupId>com.alibaba.cloud</groupId>
       <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
     </dependency>
+    <!-- 多账号 StpLogic 注册 / 内部签名 / TraceContext（WebFlux 可用，不含 servlet 依赖） -->
     <dependency>
       <groupId>com.chatcut</groupId>
-      <artifactId>common-security-core</artifactId>
+      <artifactId>chatcut-common-core</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+    <!-- 网关侧 Sa-Token 会话存储：复用若依同款 RedisUtils 读写登录态 -->
+    <dependency>
+      <groupId>com.chatcut</groupId>
+      <artifactId>chatcut-common-redis</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

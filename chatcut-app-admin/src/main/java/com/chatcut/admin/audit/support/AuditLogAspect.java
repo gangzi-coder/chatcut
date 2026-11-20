@@ -3,8 +3,7 @@ package com.chatcut.admin.audit.support;
 import com.chatcut.admin.audit.annotation.AuditAction;
 import com.chatcut.admin.audit.annotation.AuditLog;
 import com.chatcut.admin.audit.service.AuditLogService;
-import com.chatcut.common.core.exception.BizException;
-import com.chatcut.common.core.exception.CommonErrorCode;
+import com.chatcut.common.core.exception.ServiceException;
 import com.chatcut.common.core.trace.TraceContext;
 import com.chatcut.common.security.web.CurrentUser;
 import com.chatcut.common.web.log.SensitiveFieldModule;
@@ -148,14 +147,14 @@ public class AuditLogAspect {
             record.setResult(AuditResult.SUCCESS.getCode());
             return;
         }
-        if (error instanceof BizException biz) {
+        if (error instanceof ServiceException biz) {
             record.setResult(AuditResult.REJECTED.getCode());
             record.setErrorCode(biz.getCode());
             record.setErrorMsg(biz.getMessage());
             return;
         }
         record.setResult(AuditResult.ERROR.getCode());
-        record.setErrorCode(CommonErrorCode.SYSTEM_ERROR.code());
+        record.setErrorCode(10999); // 系统繁忙，对齐原 CommonErrorCode.SYSTEM_ERROR
         String message = error.getMessage();
         record.setErrorMsg(error.getClass().getSimpleName() + (message == null ? "" : ": " + message));
     }

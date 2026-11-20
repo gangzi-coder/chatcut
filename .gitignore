@@ -11,3 +11,5 @@ logs/
 .env
 application-local.yml
 docs/
+/.workbuddy/
+*.flattened-pom.xml

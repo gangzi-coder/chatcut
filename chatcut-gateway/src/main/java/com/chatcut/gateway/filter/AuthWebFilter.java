@@ -50,6 +50,7 @@ public class AuthWebFilter implements GlobalFilter, Ordered {
             + "/api/internal/health,/admin/internal/health,/enterprise/internal/health,"
             + "/api/v3/api-docs/**,/api/swagger-ui/**,/api/webjars/**,/api/doc.html,"
             + "/admin/v3/api-docs/**,/admin/swagger-ui/**,/admin/webjars/**,/admin/doc.html,"
+            + "/admin/auth/code,/admin/auth/login,/admin/auth/tenant/list,"
             + "/enterprise/v3/api-docs/**,/enterprise/swagger-ui/**,/enterprise/webjars/**,/enterprise/doc.html}")
     private String whitelistConfig;
 
@@ -120,10 +121,13 @@ public class AuthWebFilter implements GlobalFilter, Ordered {
         String userId = null;
         String enterpriseId = null;
         String adminId = null;
-        switch (logic.getLoginType()) {
-            case "admin" -> adminId = String.valueOf(loginId);
-            case "enterprise" -> enterpriseId = String.valueOf(loginId);
-            default -> userId = String.valueOf(loginId);
+        if (path.startsWith("/admin/")) {
+            // RuoYi encodes loginId as "sys_user:<id>"; the signed internal contract carries the numeric id.
+            adminId = String.valueOf(StpAdminUtil.adminIdByToken(token));
+        } else if (path.startsWith("/enterprise/")) {
+            enterpriseId = String.valueOf(loginId);
+        } else {
+            userId = String.valueOf(loginId);
         }
         return chain.filter(withTrace(exchange, traceId, userId, enterpriseId, adminId));
     }

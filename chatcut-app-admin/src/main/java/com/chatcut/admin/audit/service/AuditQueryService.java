@@ -11,9 +11,8 @@ import com.chatcut.admin.audit.repository.entity.SysAuditLogChangeEntity;
 import com.chatcut.admin.audit.repository.entity.SysAuditLogEntity;
 import com.chatcut.admin.audit.repository.mapper.SysAuditLogChangeMapper;
 import com.chatcut.admin.audit.repository.mapper.SysAuditLogMapper;
-import com.chatcut.common.core.domain.PageResult;
-import com.chatcut.common.core.exception.BizException;
-import com.chatcut.common.core.exception.CommonErrorCode;
+import com.chatcut.common.core.exception.ServiceException;
+import com.chatcut.common.mybatis.core.page.TableDataInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -32,7 +31,7 @@ public class AuditQueryService {
     private final SysAuditLogMapper auditLogMapper;
     private final SysAuditLogChangeMapper changeMapper;
 
-    public PageResult<AuditLogResp> page(AuditLogQueryReq req) {
+    public TableDataInfo<AuditLogResp> page(AuditLogQueryReq req) {
         long pageNo = Math.max(req.getPageNo(), 1);
         long pageSize = Math.min(Math.max(req.getPageSize(), 1), MAX_PAGE_SIZE);
 
@@ -52,13 +51,13 @@ public class AuditQueryService {
 
         Page<SysAuditLogEntity> page = auditLogMapper.selectPage(new Page<>(pageNo, pageSize), query);
         List<AuditLogResp> list = page.getRecords().stream().map(AuditQueryService::toResp).toList();
-        return PageResult.of(list, page.getTotal(), page.getCurrent(), page.getSize());
+        return new TableDataInfo<>(list, page.getTotal());
     }
 
     public AuditLogDetailResp detail(Long id) {
         SysAuditLogEntity entity = auditLogMapper.selectById(id);
         if (entity == null) {
-            throw new BizException(CommonErrorCode.NOT_FOUND, "审计记录不存在");
+            throw new ServiceException("审计记录不存在");
         }
         AuditLogDetailResp resp = new AuditLogDetailResp();
         resp.setId(entity.getId());

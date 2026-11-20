@@ -65,8 +65,8 @@ spring:
 
 
 # ---------- Sa-Token（网关只做 token 粗校验，会话存 Redis） ----------
-# 存储方式：sa-token-redis-jackson 提供 SaTokenDaoRedisJackson，
-# 由 common-security-core 的 SaTokenStorageConfig 显式注册进 SaManager（非内存实现）。
+# 存储方式：SharedSaTokenDao 复用 RuoYi Plus Redis DAO 序列化，
+# 由 SaTokenStorageConfig 显式注册进 SaManager，供网关校验若依 admin 的登录会话。
 # sa-token 基础参数统一在 Nacos 的 chatcut-common-{profile}.yaml。
 
 # ---------- 网关路由日志 ----------

@@ -1,6 +1,6 @@
 package com.chatcut.enterprise.internal;
 
-import com.chatcut.common.core.domain.Result;
+import com.chatcut.common.core.domain.R;
 import com.chatcut.common.security.web.CurrentUser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,19 +23,19 @@ public class InternalController {
     private String appName;
 
     @GetMapping("/health")
-    public Result<Map<String, Object>> health() {
+    public R<Map<String, Object>> health() {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("status", "UP");
         body.put("app", appName);
         body.put("ts", Instant.now().toString());
-        return Result.ok(body);
+        return R.ok(body);
     }
 
     /** 验证网关身份注入是否生效（联调第一个要看的接口）。 */
     @GetMapping("/whoami")
-    public Result<Map<String, Object>> whoami() {
+    public R<Map<String, Object>> whoami() {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("enterpriseId", CurrentUser.enterpriseId());
-        return Result.ok(body);
+        return R.ok(body);
     }
 }

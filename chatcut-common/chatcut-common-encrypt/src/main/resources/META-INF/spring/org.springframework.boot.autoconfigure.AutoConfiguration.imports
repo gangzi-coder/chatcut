@@ -1,0 +1,3 @@
+com.chatcut.common.encrypt.config.EncryptorAutoConfiguration
+com.chatcut.common.encrypt.config.ApiDecryptAutoConfiguration
+

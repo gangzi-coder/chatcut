@@ -1,41 +1,80 @@
 package com.chatcut.admin.system.repository.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.chatcut.admin.audit.annotation.AuditDisplay;
-import com.chatcut.admin.audit.annotation.AuditField;
-import com.chatcut.common.core.enums.EnableStatus;
-import com.chatcut.common.mybatis.domain.BaseEntity;
+import com.chatcut.common.mybatis.core.domain.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 /**
- * 角色，对应表 {@code sys_role}。
+ * 角色表 sys_role
  *
- * <p>角色通过 {@code sys_role_permission} 关联权限项；roleKey 供代码里做角色判断。
- * 审计快照只取 {@link AuditField} 标注的字段。</p>
+ * @author Lion Li
  */
+
 @Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @TableName("sys_role")
 public class SysRoleEntity extends BaseEntity {
 
-    /** 角色标识，全局唯一（数据库 UNIQUE KEY），创建后不建议修改。 */
-    @AuditField(label = "角色标识")
-    private String roleKey;
-
-    /** 角色名称，展示用。 */
-    @AuditField(label = "角色名称")
-    private String roleName;
-
-    /** 角色描述，可空。 */
-    @AuditField(label = "角色描述")
-    private String description;
+    /**
+     * 角色ID
+     */
+    @TableId(value = "role_id")
+    private Long roleId;
 
     /**
-     * 角色状态：0=停用 1=启用，停用后其权限不参与鉴权。
-     *
-     * @see EnableStatus 取值枚举
+     * 角色名称
      */
-    @AuditField(label = "状态", display = AuditDisplay.ENABLE_STATUS)
-    private Integer status;
+    private String roleName;
+
+    /**
+     * 角色权限
+     */
+    private String roleKey;
+
+    /**
+     * 角色排序
+     */
+    private Integer roleSort;
+
+    /**
+     * 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限 5：仅本人数据权限 6：部门及以下或本人数据权限）
+     */
+    private String dataScope;
+
+    /**
+     * 菜单树选择项是否关联显示（ 0：父子不互相关联显示 1：父子互相关联显示）
+     */
+    private Boolean menuCheckStrictly;
+
+    /**
+     * 部门树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示 ）
+     */
+    private Boolean deptCheckStrictly;
+
+    /**
+     * 角色状态（0正常 1停用）
+     * @see com.chatcut.common.core.enums.UserStatus 状态取值
+     */
+    private String status;
+
+    /**
+     * 删除标志（0代表存在 1代表删除）
+     */
+    @TableLogic
+    private String delFlag;
+
+    /**
+     * 备注
+     */
+    private String remark;
+
+    public SysRoleEntity(Long roleId) {
+        this.roleId = roleId;
+    }
+
 }

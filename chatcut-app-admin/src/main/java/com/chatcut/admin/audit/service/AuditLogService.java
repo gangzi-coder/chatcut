@@ -8,9 +8,9 @@ import com.chatcut.admin.audit.repository.mapper.SysAuditLogMapper;
 import com.chatcut.admin.audit.support.AuditRecord;
 import com.chatcut.admin.audit.support.AuditResult;
 import com.chatcut.admin.audit.support.ChangeDraft;
-import com.chatcut.admin.system.repository.entity.SysAdminEntity;
-import com.chatcut.admin.system.repository.mapper.AdminMapper;
 import com.chatcut.common.core.trace.TraceContext;
+import com.chatcut.admin.system.repository.entity.SysUserEntity;
+import com.chatcut.admin.system.repository.mapper.SysUserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -38,16 +38,16 @@ public class AuditLogService {
 
     private final SysAuditLogMapper auditLogMapper;
     private final SysAuditLogChangeMapper changeMapper;
-    private final AdminMapper adminMapper;
+    private final SysUserMapper userMapper;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     public AuditLogService(SysAuditLogMapper auditLogMapper,
                            SysAuditLogChangeMapper changeMapper,
-                           AdminMapper adminMapper,
+                           SysUserMapper userMapper,
                            com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.auditLogMapper = auditLogMapper;
         this.changeMapper = changeMapper;
-        this.adminMapper = adminMapper;
+        this.userMapper = userMapper;
         this.objectMapper = objectMapper;
     }
 
@@ -161,8 +161,8 @@ public class AuditLogService {
 
     private String resolveOperatorName(Long adminId) {
         try {
-            SysAdminEntity admin = adminMapper.selectById(adminId);
-            return admin == null ? "ID:" + adminId : admin.getUsername();
+            SysUserEntity admin = userMapper.selectById(adminId);
+            return admin == null ? "ID:" + adminId : admin.getUserName();
         } catch (Exception e) {
             // 查人失败不该让审计写不进去，ID 本身已足够定位
             return "ID:" + adminId;

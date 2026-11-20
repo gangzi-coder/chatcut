@@ -34,9 +34,10 @@ spring:
 # ---------- 安全（admin 后台走管理端账号体系，不能用默认的 user） ----------
 chatcut:
   security:
-    type: admin
-    # 为空时跳过内部签名校验，仅限本地；测试/生产必须配置
-    internal-secret: ${INTERNAL_SECRET:}
+    type: ruoyi
+  mybatis:
+    # RuoYi's MyBatis plugins provide tenant/data scope/pagination and audit field handling.
+    enabled: false
 
 nacos:
   group: DEFAULT_GROUP

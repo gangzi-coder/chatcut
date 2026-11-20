@@ -10,14 +10,32 @@
 # 优先级：远程配置 > 本地 jar 配置，本文件中的 key 会覆盖服务 application.yml 的同名 key。
 # ============================================================
 
+datasource:
+  host: ${MYSQL_HOST:127.0.0.1}
+  username: ${MYSQL_USER:root}
+  password: ${MYSQL_PASSWORD:root}
+
 spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    hikari:
+      maximum-pool-size: 8
+      minimum-idle: 2
+      connection-timeout: 3000
+      validation-timeout: 3000
+      idle-timeout: 600000
+      max-lifetime: 1200000
+      keepalive-time: 30000
   data:
     redis:
       # 网关的 sa-token 会话与业务服务必须指向同一个 Redis 实例、同一个 database，
       # 否则网关校验不到业务服务写入的登录态。
       host: ${REDIS_HOST:127.0.0.1}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      # redis-test 容器启动命令已带 --requirepass，此处直接写死，无需环境变量
+      password: cc-dev-123
       database: 0
       timeout: 2s
       lettuce:
@@ -43,12 +61,14 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 # ---------- Sa-Token ----------
-# 会话存储：Redis（SaTokenDaoRedisJackson），多节点共享、重启不掉线；
-# 由 common-security-core 的 SaTokenStorageConfig 显式注册进 SaManager，禁止退化成内存实现。
-# 注意：chatcut.security.type（admin / user 双账号体系）在服务私有配置里，不在公共段。
+# 会话存储：Redis，采用与 RuoYi Plus 相同的 Sa-Token DAO 序列化，多节点共享、重启不掉线；
+# 由 ChatCut 网关与若依 admin 共用兼容 DAO，禁止退化成内存实现。
+# 注意：chatcut.security.type 在服务私有配置里，不在公共段。
 sa-token:
   token-name: Authorization
   token-prefix: Bearer
+  # Replace this placeholder with the same random key used by gateway and admin in this environment.
+  jwt-secret-key: ${RUOYI_JWT_SECRET:CHANGE_ME_TO_A_RANDOM_SECRET_IN_NACOS}
   is-read-header: true
   is-read-cookie: false
   # 允许多端同时在线（多节点部署下不做单端互踢）

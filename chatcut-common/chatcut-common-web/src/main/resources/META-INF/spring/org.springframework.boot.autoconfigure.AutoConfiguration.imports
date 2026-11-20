@@ -1,0 +1,5 @@
+com.chatcut.common.web.config.CaptchaConfig
+com.chatcut.common.web.config.FilterConfig
+com.chatcut.common.web.config.I18nConfig
+com.chatcut.common.web.config.ResourcesConfig
+com.chatcut.common.web.config.UndertowConfig

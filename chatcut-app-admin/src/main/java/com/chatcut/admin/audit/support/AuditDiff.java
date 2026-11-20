@@ -33,7 +33,42 @@ final class AuditDiff {
     /** 反射元数据缓存，避免每次请求都扫注解。 */
     private static final Map<Class<?>, List<FieldMeta>> CACHE = new ConcurrentHashMap<>();
 
-    private record FieldMeta(Field field, String name, String label, AuditDisplay display) {
+    /**
+     * 缓存的审计字段元数据。
+     */
+    private static final class FieldMeta {
+
+        /** 反射字段。 */
+        private final Field field;
+
+        /** 字段名。 */
+        private final String name;
+
+        /** 展示名称。 */
+        private final String label;
+
+        /** 展示格式类型。 */
+        private final AuditDisplay display;
+
+        /**
+         * 构造审计字段元数据。
+         *
+         * @param field 反射字段
+         * @param name 字段名
+         * @param label 展示名称
+         * @param display 展示格式类型
+         */
+        private FieldMeta(Field field, String name, String label, AuditDisplay display) {
+            this.field = field;
+            this.name = name;
+            this.label = label;
+            this.display = display;
+        }
+
+        private Field field() { return field; }
+        private String name() { return name; }
+        private String label() { return label; }
+        private AuditDisplay display() { return display; }
     }
 
     private AuditDiff() {

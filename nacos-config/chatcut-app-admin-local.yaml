@@ -1,35 +1,44 @@
 # ============================================================
 # Nacos 配置
-#   namespace : chatcut-local（填命名空间的 ID，不是名字）
+#   namespace : chatcut-local（namespace ID）
 #   group     : DEFAULT_GROUP
 #   dataId    : chatcut-app-admin-local.yaml
 #   format    : YAML
 #
-# admin 的私有中间件配置：数据源 + MQ（admin 允许发/收消息）。
-# admin 独立库 chatcut_admin，与 app-api 的 chatcut 分开，便于以后拆库。
+# Admin 使用新库 chatcut_admin_ruoyi。旧 chatcut_admin（自建 RBAC）保留，不迁移、不覆盖。
+# MySQL 公共连接参数来自 chatcut-common-local.yaml。
 # ============================================================
 
 spring:
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:10.0.43.167}:${MYSQL_PORT:3306}/${MYSQL_DB:chatcut_admin}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    # 注意：这里必须与 Nacos 中的实际值保持一致。曾出现过源文件写 root、Nacos 里是 chatcut_user，
-    # 用源文件覆盖发布后账号被改回 root 导致连接失败。local 环境没有 secret 需求，直接写实值。
-    username: chatcut_user
-    password: chatcut2026test
-    hikari:
-      pool-name: chatcut-admin-pool
-      maximum-pool-size: 8
-      minimum-idle: 2
-      connection-timeout: 3000
-      validation-timeout: 3000
-      idle-timeout: 600000
-      max-lifetime: 1200000
-      # 保活：每 30s 发一次心跳，避免远程/办公网的空闲连接被 NAT 回收后串到下一次请求上。
-      keepalive-time: 30000
-      # 首次取连接失败时不 fail-fast：池不会因启动瞬间的网络闪断直接抛异常，网络恢复后自动建立。
-      # 不加这行时，日志会出现 HikariPool.checkFailFast -> CommunicationsException / No route to host。
-      initialization-fail-timeout: -1
+    type: com.zaxxer.hikari.HikariDataSource
+    dynamic:
+      primary: master
+      strict: true
+      datasource:
+        master:
+          type: ${spring.datasource.type}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://${datasource.host}:3306/chatcut_admin_ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
+          username: ${spring.datasource.username}
+          password: ${spring.datasource.password}
+      hikari:
+        max-pool-size: 8
+        min-idle: 2
+        connection-timeout: 3000
+        validation-timeout: 3000
+        idle-timeout: 600000
+        max-lifetime: 1200000
+        keepalive-time: 30000
+  messages:
+    basename: i18n/messages
+  threads:
+    virtual:
+      enabled: false
+  task:
+    execution:
+      thread-name-prefix: async-
+      mode: force
 
 rocketmq:
   name-server: ${ROCKETMQ_NAMESRV:127.0.0.1:9876}
@@ -37,12 +46,94 @@ rocketmq:
     group: chatcut-app-admin-producer
     send-message-timeout: 3000
 
-# ---------- 业务开关 ----------
 chatcut:
   mq:
-    # MQ 总开关。false 时整块 RocketMQ 自动装配被排除：
-    # 不创建 producer / RocketMQTemplate、不注册 @RocketMQMessageListener、不连 NameServer；
-    # 依赖 MessagePublisher 的代码会在启动时直接失败（fail-fast，不静默丢消息）。
-    # 代码缺省为 true，只有显式 false 才关。
-    # 本地没起 RocketMQ → false；测试/生产必须 true。
     enabled: false
+  cors:
+    allowed-origins:
+      - "*"
+  security:
+    type: ruoyi
+    # Preserve the existing admin Nacos internal signing secret in each environment.
+    internal-secret: ${INTERNAL_SECRET:}
+
+captcha:
+  enable: false
+  type: math
+  numberLength: 1
+  charLength: 4
+user:
+  initPassword: admin123
+  password:
+    maxRetryCount: 5
+    lockTime: 10
+
+tenant:
+  enable: false
+
+mybatis-plus:
+  enableLogicDelete: true
+  mapperPackage: com.chatcut.admin.**.repository.mapper
+  mapperLocations: classpath*:mapper/**/*Mapper.xml
+  typeAliasesPackage: com.chatcut.admin.**.repository.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    jdbc-type-for-null: 'null'
+  global-config:
+    banner: false
+    db-config:
+      id-type: assign_id
+      logic-delete-field: delFlag
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+security:
+  excludes:
+    - /*.html
+    - /**/*.html
+    - /**/*.css
+    - /**/*.js
+    - /favicon.ico
+    - /error
+    - /*/api-docs
+    - /*/api-docs/**
+    - /warm-flow-ui/config
+
+logging:
+  config: classpath:logback-plus.xml
+  level:
+    com.chatcut: info
+    org.springframework: warn
+    org.mybatis.spring.mapper: error
+    org.apache.fury: warn
+
+springdoc:
+  api-docs:
+    enabled: true
+  info:
+    title: 'ChatCut 管理后台接口'
+    description: 'ChatCut 运营管理与审计接口'
+    version: '1.0.0'
+  group-configs:
+    - group: ChatCut Admin
+      packages-to-scan: com.chatcut.admin
+
+api-decrypt:
+  enabled: false
+xss:
+  enabled: true
+  excludeUrls:
+    - /system/notice
+lock4j:
+  acquire-timeout: 3000
+  expire: 30000
+
+# RuoYi login controller publishes a welcome event through SSE after login.
+sse:
+  enabled: true
+  path: /resource/sse
+websocket:
+  enabled: false
+  path: /resource/websocket
+  allowedOrigins: '*'
