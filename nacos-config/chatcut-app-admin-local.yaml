@@ -6,7 +6,7 @@
 #   format    : YAML
 #
 # Admin 使用新库 chatcut_admin_ruoyi。旧 chatcut_admin（自建 RBAC）保留，不迁移、不覆盖。
-# MySQL 公共连接参数来自 chatcut-common-local.yaml。
+# 数据源为自包含写法（${MYSQL_*:默认值}），不依赖跨 dataId 占位符解析。
 # ============================================================
 
 spring:
@@ -17,11 +17,12 @@ spring:
       strict: true
       datasource:
         master:
-          type: ${spring.datasource.type}
+          type: com.zaxxer.hikari.HikariDataSource
           driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://${datasource.host}:3306/chatcut_admin_ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
-          username: ${spring.datasource.username}
-          password: ${spring.datasource.password}
+          # 自包含写法（与 app-api / app-enterprise 一致）：不依赖跨 dataId 的占位符解析
+          url: jdbc:mysql://${datasource.host:127.0.0.1}:3306/chatcut_admin_ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
+          username: ${datasource.username:root}
+          password: ${datasource.password:root}
       hikari:
         max-pool-size: 8
         min-idle: 2
@@ -101,7 +102,8 @@ security:
     - /warm-flow-ui/config
 
 logging:
-  config: classpath:logback-plus.xml
+  # 不再指定 logback-plus.xml（若依自带日志配置，pattern 无 traceId），
+  # 统一走 chatcut-common-{profile}.yaml 的 logging 配置（含 [%X{traceId}] 与按服务名落盘）
   level:
     com.chatcut: info
     org.springframework: warn
