@@ -7,7 +7,9 @@
 --
 -- 使用方式：
 --   1. 建库：CREATE DATABASE chatcut_admin_ruoyi DEFAULT CHARACTER SET utf8mb4;
---   2. 导入：mysql -uroot -p --default-character-set=utf8mb4 chatcut_admin_ruoyi < V1__ruoyi_admin_schema.sql
+--   2. 导入（从 chatcut/ 目录执行）：mysql -uroot -p --default-character-set=utf8mb4 chatcut_admin_ruoyi < docs/sql/00_ruoyi_admin_init.sql
+--
+-- 本目录统一维护全部 SQL：00 为基础库脚本（须先执行），01-03 为官网运营后台业务表。
 --
 -- 注意：脚本会先删除同名表再重建（审计表除外，见下方说明），仅用于空库初始化或重建，
 --       勿在有业务数据的库上执行。审计表为追加写，重复执行不会丢审计数据。

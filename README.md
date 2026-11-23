@@ -119,7 +119,7 @@ Redis 密码已写死在 Nacos `chatcut-common-{profile}.yaml` 的 `spring.data.
 
 ```bash
 mysql --default-character-set=utf8mb4 -h<host> -u<user> -p chatcut_admin_ruoyi \
-  < chatcut-app-admin/src/main/resources/db/migration/V1__ruoyi_admin_schema.sql
+  < docs/sql/00_ruoyi_admin_init.sql
 ```
 
 schema 包含初始管理员 **admin / admin123**、角色/菜单和 `sys_client` 初始配置
@@ -266,7 +266,7 @@ portal 例外：不依赖 sa-token 拦截器，全部接口只读、匿名可访
 
 ## 下一步（按顺序）
 
-1. ~~admin 若依后端集成 + ChatCut 审计~~ 已完成（脚本位于 `chatcut-app-admin/src/main/resources/db/migration/V1__ruoyi_admin_schema.sql`）
+1. ~~admin 若依后端集成 + ChatCut 审计~~ 已完成（脚本位于 `sql`）
 2. 认证闭环：api `auth` 域短信登录 + `StpUserUtil.login()`
 3. 任务闭环：api `task` 域 `biz_task` 状态机
 4. 文件闭环：api `file` 域 STS 下发 + complete 校验
