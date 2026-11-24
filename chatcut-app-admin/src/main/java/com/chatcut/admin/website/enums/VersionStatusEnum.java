@@ -9,11 +9,12 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum VersionStatusEnum {
+public enum VersionStatusEnum implements EnumCodeLabel {
 
-    PUBLISHED("PUBLISHED", "已发布"),
-    ARCHIVED("ARCHIVED", "已归档");
+    PUBLISHED("PUBLISHED", "已发布", "Published"),
+    ARCHIVED("ARCHIVED", "已归档", "Archived");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 }

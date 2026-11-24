@@ -6,6 +6,9 @@ import com.chatcut.admin.website.repository.entity.WebContentVersionEntity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import com.chatcut.admin.website.support.EnumLabelUtils;
+import com.chatcut.admin.website.enums.OpenStateEnum;
+import com.chatcut.admin.website.enums.VersionStatusEnum;
 import java.time.LocalDateTime;
 
 /**
@@ -54,4 +57,26 @@ public class WebContentVersionResp implements Serializable {
 
     /** 发布管理员 ID。 */
     private String createdBy;
+
+    // ---------------- 枚举中英文展示标签（派生字段，仅用于前端展示，不落库） ----------------
+
+    /** 开放状态中文标签。 */
+    public String getOpenStateZh() {
+        return EnumLabelUtils.labelZh(OpenStateEnum.values(), openState);
+    }
+
+    /** 开放状态英文标签。 */
+    public String getOpenStateEn() {
+        return EnumLabelUtils.labelEn(OpenStateEnum.values(), openState);
+    }
+
+    /** 版本状态中文标签。 */
+    public String getPublishStatusZh() {
+        return EnumLabelUtils.labelZh(VersionStatusEnum.values(), publishStatus);
+    }
+
+    /** 版本状态英文标签。 */
+    public String getPublishStatusEn() {
+        return EnumLabelUtils.labelEn(VersionStatusEnum.values(), publishStatus);
+    }
 }

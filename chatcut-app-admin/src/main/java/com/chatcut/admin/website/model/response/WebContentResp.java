@@ -6,6 +6,9 @@ import com.chatcut.admin.website.repository.entity.WebContentEntity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import com.chatcut.admin.website.support.EnumLabelUtils;
+import com.chatcut.admin.website.enums.ContentTypeEnum;
+import com.chatcut.admin.website.enums.ContentStatusEnum;
 import java.time.LocalDateTime;
 
 /**
@@ -49,4 +52,26 @@ public class WebContentResp implements Serializable {
 
     /** 乐观锁版本号（详情/编辑时回传）。 */
     private Integer version;
+
+    // ---------------- 枚举中英文展示标签（派生字段，仅用于前端展示，不落库） ----------------
+
+    /** 内容类型中文标签。 */
+    public String getContentTypeZh() {
+        return EnumLabelUtils.labelZh(ContentTypeEnum.values(), contentType);
+    }
+
+    /** 内容类型英文标签。 */
+    public String getContentTypeEn() {
+        return EnumLabelUtils.labelEn(ContentTypeEnum.values(), contentType);
+    }
+
+    /** 内容状态中文标签。 */
+    public String getStatusZh() {
+        return EnumLabelUtils.labelZh(ContentStatusEnum.values(), status);
+    }
+
+    /** 内容状态英文标签。 */
+    public String getStatusEn() {
+        return EnumLabelUtils.labelEn(ContentStatusEnum.values(), status);
+    }
 }

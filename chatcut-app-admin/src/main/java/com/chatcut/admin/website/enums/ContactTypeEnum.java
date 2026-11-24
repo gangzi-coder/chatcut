@@ -10,13 +10,14 @@ import java.util.Arrays;
  */
 @Getter
 @AllArgsConstructor
-public enum ContactTypeEnum {
+public enum ContactTypeEnum implements EnumCodeLabel {
 
-    PHONE("PHONE", "手机号"),
-    EMAIL("EMAIL", "邮箱");
+    PHONE("PHONE", "手机号", "Phone"),
+    EMAIL("EMAIL", "邮箱", "Email");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 
     public static ContactTypeEnum of(String code) {
         return Arrays.stream(values()).filter(e -> e.code.equals(code)).findFirst()

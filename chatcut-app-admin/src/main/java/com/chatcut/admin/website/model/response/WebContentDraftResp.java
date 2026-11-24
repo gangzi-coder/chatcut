@@ -6,6 +6,8 @@ import com.chatcut.admin.website.repository.entity.WebContentDraftEntity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import com.chatcut.admin.website.support.EnumLabelUtils;
+import com.chatcut.admin.website.enums.OpenStateEnum;
 import java.time.LocalDateTime;
 
 /**
@@ -45,4 +47,16 @@ public class WebContentDraftResp implements Serializable {
 
     /** 最后更新时间。 */
     private LocalDateTime updatedAt;
+
+    // ---------------- 枚举中英文展示标签（派生字段，仅用于前端展示，不落库） ----------------
+
+    /** 开放状态中文标签。 */
+    public String getOpenStateZh() {
+        return EnumLabelUtils.labelZh(OpenStateEnum.values(), openState);
+    }
+
+    /** 开放状态英文标签。 */
+    public String getOpenStateEn() {
+        return EnumLabelUtils.labelEn(OpenStateEnum.values(), openState);
+    }
 }

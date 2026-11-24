@@ -11,15 +11,16 @@ import java.util.List;
  */
 @Getter
 @AllArgsConstructor
-public enum LeadStatusEnum {
+public enum LeadStatusEnum implements EnumCodeLabel {
 
-    PENDING("PENDING", "待处理"),
-    IN_PROGRESS("IN_PROGRESS", "跟进中"),
-    COMPLETED("COMPLETED", "已完成"),
-    INVALID("INVALID", "无效");
+    PENDING("PENDING", "待处理", "Pending"),
+    IN_PROGRESS("IN_PROGRESS", "跟进中", "In Progress"),
+    COMPLETED("COMPLETED", "已完成", "Completed"),
+    INVALID("INVALID", "无效", "Invalid");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 
     /** 终态集合。 */
     public static final List<LeadStatusEnum> FINAL_STATES = List.of(COMPLETED, INVALID);

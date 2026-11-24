@@ -6,6 +6,9 @@ import com.chatcut.admin.website.repository.entity.WebAssetEntity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import com.chatcut.admin.website.support.EnumLabelUtils;
+import com.chatcut.admin.website.enums.AssetTypeEnum;
+import com.chatcut.admin.website.enums.AssetStatusEnum;
 import java.time.LocalDateTime;
 
 /**
@@ -52,4 +55,26 @@ public class WebAssetResp implements Serializable {
 
     /** 最后更新时间。 */
     private LocalDateTime updatedAt;
+
+    // ---------------- 枚举中英文展示标签（派生字段，仅用于前端展示，不落库） ----------------
+
+    /** 素材类型中文标签。 */
+    public String getAssetTypeZh() {
+        return EnumLabelUtils.labelZh(AssetTypeEnum.values(), assetType);
+    }
+
+    /** 素材类型英文标签。 */
+    public String getAssetTypeEn() {
+        return EnumLabelUtils.labelEn(AssetTypeEnum.values(), assetType);
+    }
+
+    /** 素材状态中文标签。 */
+    public String getStatusZh() {
+        return EnumLabelUtils.labelZh(AssetStatusEnum.values(), status);
+    }
+
+    /** 素材状态英文标签。 */
+    public String getStatusEn() {
+        return EnumLabelUtils.labelEn(AssetStatusEnum.values(), status);
+    }
 }

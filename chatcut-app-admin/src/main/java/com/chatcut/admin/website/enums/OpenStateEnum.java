@@ -10,14 +10,15 @@ import java.util.Arrays;
  */
 @Getter
 @AllArgsConstructor
-public enum OpenStateEnum {
+public enum OpenStateEnum implements EnumCodeLabel {
 
-    PREVIEW("PREVIEW", "预告"),
-    AVAILABLE("AVAILABLE", "可用"),
-    PAUSED("PAUSED", "暂停");
+    PREVIEW("PREVIEW", "预告", "Preview"),
+    AVAILABLE("AVAILABLE", "可用", "Available"),
+    PAUSED("PAUSED", "暂停", "Paused");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 
     public static OpenStateEnum of(String code) {
         return Arrays.stream(values()).filter(e -> e.code.equals(code)).findFirst()

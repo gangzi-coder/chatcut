@@ -10,14 +10,15 @@ import java.util.Arrays;
  */
 @Getter
 @AllArgsConstructor
-public enum ContentStatusEnum {
+public enum ContentStatusEnum implements EnumCodeLabel {
 
-    DRAFT("DRAFT", "草稿"),
-    PUBLISHED("PUBLISHED", "已发布"),
-    OFFLINE("OFFLINE", "已下线");
+    DRAFT("DRAFT", "草稿", "Draft"),
+    PUBLISHED("PUBLISHED", "已发布", "Published"),
+    OFFLINE("OFFLINE", "已下线", "Offline");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 
     public static ContentStatusEnum of(String code) {
         return Arrays.stream(values()).filter(e -> e.code.equals(code)).findFirst()

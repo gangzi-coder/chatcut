@@ -8,12 +8,13 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum CtaTargetTypeEnum {
+public enum CtaTargetTypeEnum implements EnumCodeLabel {
 
-    LEAD("LEAD", "留资咨询"),
-    CONTENT("CONTENT", "站内跳转"),
-    EXTERNAL("EXTERNAL", "外链");
+    LEAD("LEAD", "留资咨询", "Lead Form"),
+    CONTENT("CONTENT", "站内跳转", "In-site Link"),
+    EXTERNAL("EXTERNAL", "外链", "External Link");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 }

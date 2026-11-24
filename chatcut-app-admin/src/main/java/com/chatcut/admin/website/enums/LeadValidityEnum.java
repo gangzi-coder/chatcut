@@ -10,14 +10,15 @@ import java.util.Arrays;
  */
 @Getter
 @AllArgsConstructor
-public enum LeadValidityEnum {
+public enum LeadValidityEnum implements EnumCodeLabel {
 
-    UNCONFIRMED("UNCONFIRMED", "待确认"),
-    VALID("VALID", "有效"),
-    INVALID("INVALID", "无效");
+    UNCONFIRMED("UNCONFIRMED", "待确认", "Unconfirmed"),
+    VALID("VALID", "有效", "Valid"),
+    INVALID("INVALID", "无效", "Invalid");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 
     public static LeadValidityEnum of(String code) {
         return Arrays.stream(values()).filter(e -> e.code.equals(code)).findFirst()

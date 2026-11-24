@@ -12,15 +12,16 @@ import java.util.List;
  */
 @Getter
 @AllArgsConstructor
-public enum FeedbackStatusEnum {
+public enum FeedbackStatusEnum implements EnumCodeLabel {
 
-    PENDING("PENDING", "待处理"),
-    PROCESSING("PROCESSING", "处理中"),
-    COMPLETED("COMPLETED", "已完成"),
-    REJECTED("REJECTED", "不予处理");
+    PENDING("PENDING", "待处理", "Pending"),
+    PROCESSING("PROCESSING", "处理中", "Processing"),
+    COMPLETED("COMPLETED", "已完成", "Completed"),
+    REJECTED("REJECTED", "不予处理", "Rejected");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 
     public static final List<FeedbackStatusEnum> FINAL_STATES = List.of(COMPLETED, REJECTED);
 

@@ -10,13 +10,14 @@ import java.util.Arrays;
  */
 @Getter
 @AllArgsConstructor
-public enum AssetStatusEnum {
+public enum AssetStatusEnum implements EnumCodeLabel {
 
-    ACTIVE("ACTIVE", "可用"),
-    DELETED("DELETED", "已删除");
+    ACTIVE("ACTIVE", "可用", "Available"),
+    DELETED("DELETED", "已删除", "Deleted");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 
     public static boolean isValid(String code) {
         return Arrays.stream(values()).anyMatch(e -> e.code.equals(code));

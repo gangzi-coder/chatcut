@@ -10,16 +10,17 @@ import java.util.Arrays;
  */
 @Getter
 @AllArgsConstructor
-public enum FeedbackCategoryEnum {
+public enum FeedbackCategoryEnum implements EnumCodeLabel {
 
-    PAGE_ISSUE("PAGE_ISSUE", "页面问题"),
-    USAGE_ISSUE("USAGE_ISSUE", "使用问题"),
-    CONTENT_SUGGESTION("CONTENT_SUGGESTION", "内容建议"),
-    PARTNERSHIP("PARTNERSHIP", "合作咨询"),
-    OTHER("OTHER", "其他");
+    PAGE_ISSUE("PAGE_ISSUE", "页面问题", "Page Issue"),
+    USAGE_ISSUE("USAGE_ISSUE", "使用问题", "Usage Issue"),
+    CONTENT_SUGGESTION("CONTENT_SUGGESTION", "内容建议", "Content Suggestion"),
+    PARTNERSHIP("PARTNERSHIP", "合作咨询", "Partnership"),
+    OTHER("OTHER", "其他", "Other");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 
     public static FeedbackCategoryEnum of(String code) {
         return Arrays.stream(values()).filter(e -> e.code.equals(code)).findFirst()

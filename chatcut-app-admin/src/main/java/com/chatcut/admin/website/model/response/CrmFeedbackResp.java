@@ -6,6 +6,10 @@ import com.chatcut.admin.website.repository.entity.CrmFeedbackEntity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import com.chatcut.admin.website.support.EnumLabelUtils;
+import com.chatcut.admin.website.enums.FeedbackCategoryEnum;
+import com.chatcut.admin.website.enums.ContactTypeEnum;
+import com.chatcut.admin.website.enums.FeedbackStatusEnum;
 import java.time.LocalDateTime;
 
 /**
@@ -58,4 +62,36 @@ public class CrmFeedbackResp implements Serializable {
 
     /** 乐观锁版本号。 */
     private Integer version;
+
+    // ---------------- 枚举中英文展示标签（派生字段，仅用于前端展示，不落库） ----------------
+
+    /** 分类中文标签。 */
+    public String getCategoryZh() {
+        return EnumLabelUtils.labelZh(FeedbackCategoryEnum.values(), category);
+    }
+
+    /** 分类英文标签。 */
+    public String getCategoryEn() {
+        return EnumLabelUtils.labelEn(FeedbackCategoryEnum.values(), category);
+    }
+
+    /** 联系方式类型中文标签。 */
+    public String getContactTypeZh() {
+        return EnumLabelUtils.labelZh(ContactTypeEnum.values(), contactType);
+    }
+
+    /** 联系方式类型英文标签。 */
+    public String getContactTypeEn() {
+        return EnumLabelUtils.labelEn(ContactTypeEnum.values(), contactType);
+    }
+
+    /** 处理状态中文标签。 */
+    public String getStatusZh() {
+        return EnumLabelUtils.labelZh(FeedbackStatusEnum.values(), status);
+    }
+
+    /** 处理状态英文标签。 */
+    public String getStatusEn() {
+        return EnumLabelUtils.labelEn(FeedbackStatusEnum.values(), status);
+    }
 }

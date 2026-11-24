@@ -10,17 +10,18 @@ import java.util.Arrays;
  */
 @Getter
 @AllArgsConstructor
-public enum ContentTypeEnum {
+public enum ContentTypeEnum implements EnumCodeLabel {
 
-    PAGE("PAGE", "页面区块"),
-    NOTICE("NOTICE", "公告"),
-    CASE("CASE", "展示案例"),
-    RESOURCE("RESOURCE", "资源文档"),
-    POLICY("POLICY", "法律条款"),
-    PRODUCT("PRODUCT", "产品方案");
+    PAGE("PAGE", "页面区块", "Page Section"),
+    NOTICE("NOTICE", "公告", "Notice"),
+    CASE("CASE", "展示案例", "Case Study"),
+    RESOURCE("RESOURCE", "资源文档", "Resource"),
+    POLICY("POLICY", "法律条款", "Legal & Policy"),
+    PRODUCT("PRODUCT", "产品方案", "Product Plan");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 
     public static ContentTypeEnum of(String code) {
         return Arrays.stream(values()).filter(e -> e.code.equals(code)).findFirst()

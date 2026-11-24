@@ -10,14 +10,15 @@ import java.util.Arrays;
  */
 @Getter
 @AllArgsConstructor
-public enum AssetTypeEnum {
+public enum AssetTypeEnum implements EnumCodeLabel {
 
-    TEXT("TEXT", "文本"),
-    VIDEO("VIDEO", "视频"),
-    AUDIO("AUDIO", "声音");
+    TEXT("TEXT", "文本", "Text"),
+    VIDEO("VIDEO", "视频", "Video"),
+    AUDIO("AUDIO", "声音", "Audio");
 
     private final String code;
     private final String label;
+    private final String labelEn;
 
     public static AssetTypeEnum of(String code) {
         return Arrays.stream(values()).filter(e -> e.code.equals(code)).findFirst()
