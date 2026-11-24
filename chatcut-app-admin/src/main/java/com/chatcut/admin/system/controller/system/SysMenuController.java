@@ -5,6 +5,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
 import cn.hutool.core.lang.tree.Tree;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import com.chatcut.common.core.constant.SystemConstants;
 import com.chatcut.common.core.constant.TenantConstants;
@@ -24,6 +25,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -74,9 +76,9 @@ public class SysMenuController extends BaseController {
         TenantConstants.TENANT_ADMIN_ROLE_KEY
     }, mode = SaMode.OR)
     @SaCheckPermission("system:menu:query")
-    @GetMapping(value = "/{menuId}")
-    public R<SysMenuResp> getInfo(@PathVariable Long menuId) {
-        return R.ok(menuService.selectMenuById(menuId));
+    @GetMapping("/getSysMenuInfo")
+    public R<SysMenuResp> getInfo(@RequestParam("id") String menuId) {
+        return R.ok(menuService.selectMenuById(Long.valueOf(menuId)));
     }
 
     /**
@@ -95,11 +97,11 @@ public class SysMenuController extends BaseController {
      * @param roleId 角色ID
      */
     @SaCheckPermission("system:menu:query")
-    @GetMapping(value = "/roleMenuTreeselect/{roleId}")
-    public R<MenuTreeSelectResp> roleMenuTreeselect(@PathVariable("roleId") Long roleId) {
+    @GetMapping("/getSysRoleMenuTree")
+    public R<MenuTreeSelectResp> roleMenuTreeselect(@RequestParam("roleId") String roleId) {
         List<SysMenuResp> menus = menuService.selectMenuList(LoginHelper.getUserId());
         MenuTreeSelectResp selectVo = new MenuTreeSelectResp(
-            menuService.selectMenuListByRoleId(roleId),
+            menuService.selectMenuListByRoleId(Long.valueOf(roleId)),
             menuService.buildMenuTreeSelect(menus));
         return R.ok(selectVo);
     }
@@ -112,7 +114,7 @@ public class SysMenuController extends BaseController {
     @SaCheckPermission("system:menu:add")
     @Log(title = "菜单管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
-    @PostMapping
+    @PostMapping("/addSysMenu")
     public R<Void> add(@Validated @RequestBody SysMenuReq menu) {
         if (!menuService.checkMenuNameUnique(menu)) {
             return R.fail("新增菜单'" + menu.getMenuName() + "'失败，菜单名称已存在");
@@ -131,7 +133,7 @@ public class SysMenuController extends BaseController {
     @SaCheckPermission("system:menu:edit")
     @Log(title = "菜单管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping
+    @PostMapping("/updateSysMenu")
     public R<Void> edit(@Validated @RequestBody SysMenuReq menu) {
         if (!menuService.checkMenuNameUnique(menu)) {
             return R.fail("修改菜单'" + menu.getMenuName() + "'失败，菜单名称已存在");
@@ -153,15 +155,16 @@ public class SysMenuController extends BaseController {
     @SaCheckRole(TenantConstants.SUPER_ADMIN_ROLE_KEY)
     @SaCheckPermission("system:menu:remove")
     @Log(title = "菜单管理", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{menuId}")
-    public R<Void> remove(@PathVariable("menuId") Long menuId) {
-        if (menuService.hasChildByMenuId(menuId)) {
+    @PostMapping("/removeSysMenu")
+    public R<Void> remove(@RequestParam("id") String menuId) {
+        Long id = Long.valueOf(menuId);
+        if (menuService.hasChildByMenuId(id)) {
             return R.warn("存在子菜单,不允许删除");
         }
-        if (menuService.checkMenuExistRole(menuId)) {
+        if (menuService.checkMenuExistRole(id)) {
             return R.warn("菜单已分配,不允许删除");
         }
-        return toAjax(menuService.deleteMenuById(menuId));
+        return toAjax(menuService.deleteMenuById(id));
     }
 /**
      * 批量级联删除菜单
@@ -171,9 +174,11 @@ public class SysMenuController extends BaseController {
     @SaCheckRole(TenantConstants.SUPER_ADMIN_ROLE_KEY)
     @SaCheckPermission("system:menu:remove")
     @Log(title = "菜单管理", businessType = BusinessType.DELETE)
-    @DeleteMapping("/cascade/{menuIds}")
-    public R<Void> remove(@PathVariable("menuIds") Long[] menuIds) {
-        List<Long> menuIdList = List.of(menuIds);
+    @PostMapping("/removeSysMenuCascade")
+    public R<Void> removeCascade(@RequestParam("ids") String menuIds) {
+        List<Long> menuIdList = Arrays.stream(menuIds.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .map(Long::valueOf).toList();
         if (menuService.hasChildByMenuId(menuIdList)) {
             return R.warn("存在子菜单,不允许删除");
         }

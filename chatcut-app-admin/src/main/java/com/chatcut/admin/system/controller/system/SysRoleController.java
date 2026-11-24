@@ -4,6 +4,7 @@ import com.chatcut.admin.system.model.resp.DeptTreeSelectResp;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.hutool.core.lang.tree.Tree;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import com.chatcut.common.core.domain.R;
 import com.chatcut.common.excel.utils.ExcelUtil;
@@ -26,6 +27,7 @@ import com.chatcut.admin.system.service.ISysUserService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -69,10 +71,11 @@ public class SysRoleController extends BaseController {
      * @param roleId 角色ID
      */
     @SaCheckPermission("system:role:query")
-    @GetMapping(value = "/{roleId}")
-    public R<SysRoleResp> getInfo(@PathVariable Long roleId) {
-        roleService.checkRoleDataScope(roleId);
-        return R.ok(roleService.selectRoleById(roleId));
+    @GetMapping("/getSysRoleInfo")
+    public R<SysRoleResp> getInfo(@RequestParam("id") String roleId) {
+        Long id = Long.valueOf(roleId);
+        roleService.checkRoleDataScope(id);
+        return R.ok(roleService.selectRoleById(id));
     }
 
     /**
@@ -81,7 +84,7 @@ public class SysRoleController extends BaseController {
     @SaCheckPermission("system:role:add")
     @Log(title = "角色管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
-    @PostMapping
+    @PostMapping("/addSysRole")
     public R<Void> add(@Validated @RequestBody SysRoleReq role) {
         roleService.checkRoleAllowed(role);
         if (!roleService.checkRoleNameUnique(role)) {
@@ -99,7 +102,7 @@ public class SysRoleController extends BaseController {
     @SaCheckPermission("system:role:edit")
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping
+    @PostMapping("/updateSysRole")
     public R<Void> edit(@Validated @RequestBody SysRoleReq role) {
         roleService.checkRoleAllowed(role);
         roleService.checkRoleDataScope(role.getRoleId());
@@ -122,7 +125,7 @@ public class SysRoleController extends BaseController {
     @SaCheckPermission("system:role:edit")
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping("/dataScope")
+    @PostMapping("/updateSysRoleDataScope")
     public R<Void> dataScope(@RequestBody SysRoleReq role) {
         roleService.checkRoleAllowed(role);
         roleService.checkRoleDataScope(role.getRoleId());
@@ -135,7 +138,7 @@ public class SysRoleController extends BaseController {
     @SaCheckPermission("system:role:edit")
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping("/changeStatus")
+    @PostMapping("/changeStatus")
     public R<Void> changeStatus(@RequestBody SysRoleReq role) {
         roleService.checkRoleAllowed(role);
         roleService.checkRoleDataScope(role.getRoleId());
@@ -149,9 +152,13 @@ public class SysRoleController extends BaseController {
      */
     @SaCheckPermission("system:role:remove")
     @Log(title = "角色管理", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{roleIds}")
-    public R<Void> remove(@PathVariable Long[] roleIds) {
-        return toAjax(roleService.deleteRoleByIds(List.of(roleIds)));
+    @PostMapping("/removeSysRole")
+    public R<Void> remove(@NotEmpty(message = "主键不能为空")
+                          @RequestParam("ids") String ids) {
+        List<Long> idList = Arrays.stream(ids.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .map(Long::valueOf).toList();
+        return toAjax(roleService.deleteRoleByIds(idList));
     }
 
     /**
@@ -189,7 +196,7 @@ public class SysRoleController extends BaseController {
     @SaCheckPermission("system:role:edit")
     @Log(title = "角色管理", businessType = BusinessType.GRANT)
     @RepeatSubmit()
-    @PutMapping("/authUser/cancel")
+    @PostMapping("/authUser/cancel")
     public R<Void> cancelAuthUser(@RequestBody SysUserRoleReq req) {
         SysUserRoleEntity userRole = new SysUserRoleEntity();
         userRole.setUserId(req.getUserId());
@@ -206,7 +213,7 @@ public class SysRoleController extends BaseController {
     @SaCheckPermission("system:role:edit")
     @Log(title = "角色管理", businessType = BusinessType.GRANT)
     @RepeatSubmit()
-    @PutMapping("/authUser/cancelAll")
+    @PostMapping("/authUser/cancelAll")
     public R<Void> cancelAuthUserAll(Long roleId, Long[] userIds) {
         return toAjax(roleService.deleteAuthUsers(roleId, userIds));
     }
@@ -220,7 +227,7 @@ public class SysRoleController extends BaseController {
     @SaCheckPermission("system:role:edit")
     @Log(title = "角色管理", businessType = BusinessType.GRANT)
     @RepeatSubmit()
-    @PutMapping("/authUser/selectAll")
+    @PostMapping("/authUser/selectAll")
     public R<Void> selectAuthUserAll(Long roleId, Long[] userIds) {
         roleService.checkRoleDataScope(roleId);
         return toAjax(roleService.insertAuthUsers(roleId, userIds));
@@ -232,10 +239,11 @@ public class SysRoleController extends BaseController {
      * @param roleId 角色ID
      */
     @SaCheckPermission("system:role:list")
-    @GetMapping(value = "/deptTree/{roleId}")
-    public R<DeptTreeSelectResp> roleDeptTreeselect(@PathVariable("roleId") Long roleId) {
+    @GetMapping("/getSysRoleDeptTree")
+    public R<DeptTreeSelectResp> roleDeptTreeselect(@RequestParam("roleId") String roleId) {
+        Long id = Long.valueOf(roleId);
         DeptTreeSelectResp selectVo = new DeptTreeSelectResp(
-            deptService.selectDeptListByRoleId(roleId),
+            deptService.selectDeptListByRoleId(id),
             deptService.selectDeptTreeList(new SysDeptReq()));
         return R.ok(selectVo);
     }

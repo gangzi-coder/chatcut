@@ -16,6 +16,7 @@ import com.chatcut.admin.system.model.resp.SysOssConfigResp;
 import com.chatcut.admin.system.service.ISysOssConfigService;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -52,10 +53,10 @@ public class SysOssConfigController extends BaseController {
      * @param ossConfigId OSS配置ID
      */
     @SaCheckPermission("system:ossConfig:list")
-    @GetMapping("/{ossConfigId}")
+    @GetMapping("/getSysOssConfigInfo")
     public R<SysOssConfigResp> getInfo(@NotNull(message = "主键不能为空")
-                                     @PathVariable Long ossConfigId) {
-        return R.ok(ossConfigService.queryById(ossConfigId));
+                                     @RequestParam("id") String ossConfigId) {
+        return R.ok(ossConfigService.queryById(Long.valueOf(ossConfigId)));
     }
 
     /**
@@ -64,7 +65,7 @@ public class SysOssConfigController extends BaseController {
     @SaCheckPermission("system:ossConfig:add")
     @Log(title = "对象存储配置", businessType = BusinessType.INSERT)
     @RepeatSubmit()
-    @PostMapping()
+    @PostMapping("/addSysOssConfig")
     public R<Void> add(@Validated(AddGroup.class) @RequestBody SysOssConfigReq bo) {
         return toAjax(ossConfigService.insertByBo(bo));
     }
@@ -75,7 +76,7 @@ public class SysOssConfigController extends BaseController {
     @SaCheckPermission("system:ossConfig:edit")
     @Log(title = "对象存储配置", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping()
+    @PostMapping("/updateSysOssConfig")
     public R<Void> edit(@Validated(EditGroup.class) @RequestBody SysOssConfigReq bo) {
         return toAjax(ossConfigService.updateByBo(bo));
     }
@@ -87,10 +88,13 @@ public class SysOssConfigController extends BaseController {
      */
     @SaCheckPermission("system:ossConfig:remove")
     @Log(title = "对象存储配置", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{ossConfigIds}")
+    @PostMapping("/removeSysOssConfig")
     public R<Void> remove(@NotEmpty(message = "主键不能为空")
-                          @PathVariable Long[] ossConfigIds) {
-        return toAjax(ossConfigService.deleteWithValidByIds(List.of(ossConfigIds), true));
+                          @RequestParam("ids") String ossConfigIds) {
+        List<Long> idList = Arrays.stream(ossConfigIds.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .map(Long::valueOf).toList();
+        return toAjax(ossConfigService.deleteWithValidByIds(idList, true));
     }
 
     /**
@@ -99,7 +103,7 @@ public class SysOssConfigController extends BaseController {
     @SaCheckPermission("system:ossConfig:edit")
     @Log(title = "对象存储状态修改", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping("/changeStatus")
+    @PostMapping("/changeStatus")
     public R<Void> changeStatus(@RequestBody SysOssConfigReq bo) {
         return toAjax(ossConfigService.updateOssConfigStatus(bo));
     }

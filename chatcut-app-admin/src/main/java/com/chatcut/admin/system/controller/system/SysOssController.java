@@ -53,10 +53,13 @@ public class SysOssController extends BaseController {
      * @param ossIds OSS对象ID串
      */
     @SaCheckPermission("system:oss:query")
-    @GetMapping("/listByIds/{ossIds}")
+    @GetMapping("/listSysOssByIds")
     public R<List<SysOssResp>> listByIds(@NotEmpty(message = "主键不能为空")
-                                       @PathVariable Long[] ossIds) {
-        List<SysOssResp> list = ossService.listByIds(Arrays.asList(ossIds));
+                                       @RequestParam("ids") String ossIds) {
+        List<Long> idList = Arrays.stream(ossIds.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .map(Long::valueOf).toList();
+        List<SysOssResp> list = ossService.listByIds(idList);
         return R.ok(list);
     }
 
@@ -83,9 +86,9 @@ public class SysOssController extends BaseController {
      * @param ossId OSS对象ID
      */
     @SaCheckPermission("system:oss:download")
-    @GetMapping("/download/{ossId}")
-    public void download(@PathVariable Long ossId, HttpServletResponse response) throws IOException {
-        ossService.download(ossId, response);
+    @GetMapping("/downloadSysOss")
+    public void download(@RequestParam("ossId") String ossId, HttpServletResponse response) throws IOException {
+        ossService.download(Long.valueOf(ossId), response);
     }
 
     /**
@@ -95,10 +98,13 @@ public class SysOssController extends BaseController {
      */
     @SaCheckPermission("system:oss:remove")
     @Log(title = "OSS对象存储", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{ossIds}")
+    @PostMapping("/removeSysOss")
     public R<Void> remove(@NotEmpty(message = "主键不能为空")
-                          @PathVariable Long[] ossIds) {
-        return toAjax(ossService.deleteWithValidByIds(List.of(ossIds), true));
+                          @RequestParam("ids") String ossIds) {
+        List<Long> idList = Arrays.stream(ossIds.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .map(Long::valueOf).toList();
+        return toAjax(ossService.deleteWithValidByIds(idList, true));
     }
 
 }

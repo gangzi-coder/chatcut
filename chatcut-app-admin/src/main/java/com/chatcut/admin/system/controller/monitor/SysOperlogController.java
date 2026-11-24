@@ -17,6 +17,8 @@ import com.chatcut.admin.system.service.ISysOperLogService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+
 import java.util.List;
 
 /**
@@ -58,9 +60,12 @@ public class SysOperlogController extends BaseController {
      */
     @Log(title = "操作日志", businessType = BusinessType.DELETE)
     @SaCheckPermission("monitor:operlog:remove")
-    @DeleteMapping("/{operIds}")
-    public R<Void> remove(@PathVariable Long[] operIds) {
-        return toAjax(operLogService.deleteOperLogByIds(operIds));
+    @PostMapping("/removeSysOperLog")
+    public R<Void> remove(@RequestParam("ids") String operIds) {
+        List<Long> idList = Arrays.stream(operIds.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .map(Long::valueOf).toList();
+        return toAjax(operLogService.deleteOperLogByIds(idList.toArray(new Long[0])));
     }
 
     /**
@@ -69,7 +74,7 @@ public class SysOperlogController extends BaseController {
     @Log(title = "操作日志", businessType = BusinessType.CLEAN)
     @SaCheckPermission("monitor:operlog:remove")
     @Lock4j
-    @DeleteMapping("/clean")
+    @PostMapping("/cleanSysOperLog")
     public R<Void> clean() {
         operLogService.cleanOperLog();
         return R.ok();

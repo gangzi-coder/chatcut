@@ -60,13 +60,13 @@ public class SysClientController extends BaseController {
     /**
      * 获取客户端管理详细信息
      *
-     * @param id 主键
+     * @param id 主键（前端传 String，规避 JS 长整型精度丢失）
      */
     @SaCheckPermission("system:client:query")
-    @GetMapping("/{id}")
+    @GetMapping("/getSysClientInfo")
     public R<SysClientResp> getInfo(@NotNull(message = "主键不能为空")
-                                  @PathVariable Long id) {
-        return R.ok(sysClientService.queryById(id));
+                                  @RequestParam("id") String id) {
+        return R.ok(sysClientService.queryById(Long.valueOf(id)));
     }
 
     /**
@@ -75,7 +75,7 @@ public class SysClientController extends BaseController {
     @SaCheckPermission("system:client:add")
     @Log(title = "客户端管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
-    @PostMapping()
+    @PostMapping("/addSysClient")
     public R<Void> add(@Validated(AddGroup.class) @RequestBody SysClientReq bo) {
         if (!sysClientService.checkClickKeyUnique(bo)) {
             return R.fail("新增客户端'" + bo.getClientKey() + "'失败，客户端key已存在");
@@ -89,7 +89,7 @@ public class SysClientController extends BaseController {
     @SaCheckPermission("system:client:edit")
     @Log(title = "客户端管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping()
+    @PostMapping("/updateSysClient")
     public R<Void> edit(@Validated(EditGroup.class) @RequestBody SysClientReq bo) {
         if (!sysClientService.checkClickKeyUnique(bo)) {
             return R.fail("修改客户端'" + bo.getClientKey() + "'失败，客户端key已存在");
@@ -102,7 +102,7 @@ public class SysClientController extends BaseController {
      */
     @SaCheckPermission("system:client:edit")
     @Log(title = "客户端管理", businessType = BusinessType.UPDATE)
-    @PutMapping("/changeStatus")
+    @PostMapping("/changeStatus")
     public R<Void> changeStatus(@RequestBody SysClientReq bo) {
         return toAjax(sysClientService.updateClientStatus(bo.getClientId(), bo.getStatus()));
     }
@@ -110,13 +110,16 @@ public class SysClientController extends BaseController {
     /**
      * 删除客户端管理
      *
-     * @param ids 主键串
+     * @param ids 主键串（逗号分隔，前端传 String）
      */
     @SaCheckPermission("system:client:remove")
     @Log(title = "客户端管理", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{ids}")
+    @PostMapping("/removeSysClient")
     public R<Void> remove(@NotEmpty(message = "主键不能为空")
-                          @PathVariable Long[] ids) {
-        return toAjax(sysClientService.deleteWithValidByIds(List.of(ids), true));
+                          @RequestParam("ids") String ids) {
+        List<Long> idList = java.util.Arrays.stream(ids.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .map(Long::valueOf).toList();
+        return toAjax(sysClientService.deleteWithValidByIds(idList, true));
     }
 }

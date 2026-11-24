@@ -327,32 +327,8 @@ insert into sys_client values (1, 'e5cd7e4891bf95d1d19206ce24a7b32e', 'pc', 'pc1
 INSERT INTO sys_oss_config (oss_config_id,config_key,access_key,secret_key,bucket_name,prefix,endpoint,domain,is_https,region,access_policy,status,ext1,create_dept,create_by,create_time,remark) VALUES (1,'aliyun','','','','','','','N','','1','0','',103,1,NOW(),'填写实际对象存储参数后启用');
 
 -- ============================================================================
--- ChatCut 管理端审计表（追加写、不做删除标记，重复执行不会丢数据：
---   建表用 IF NOT EXISTS，菜单与授权用 INSERT IGNORE）
+-- （2026-11-24）自建审计模块已删除：操作留痕统一走若依 @Log → sys_oper_log；
+-- 官网域字段级变更走 web_change_log（见 03_website_setting_log.sql）。
 -- ============================================================================
-
-CREATE TABLE IF NOT EXISTS sys_audit_log (
-  id BIGINT NOT NULL PRIMARY KEY, trace_id VARCHAR(32) NOT NULL, operator_id BIGINT NULL, operator_name VARCHAR(64) NULL,
-  operator_ip VARCHAR(64) NOT NULL, operator_ua VARCHAR(255) NULL, caller VARCHAR(32) NOT NULL, module VARCHAR(32) NOT NULL,
-  action VARCHAR(32) NOT NULL, action_name VARCHAR(64) NOT NULL, target_type VARCHAR(32) NULL, target_id VARCHAR(64) NULL,
-  target_name VARCHAR(128) NULL, content VARCHAR(500) NOT NULL, before_data JSON NULL, after_data JSON NULL,
-  changed_fields VARCHAR(500) NULL, detail JSON NULL, request_uri VARCHAR(255) NOT NULL, http_method VARCHAR(16) NOT NULL,
-  request_data JSON NULL, result TINYINT NOT NULL, error_code INT NULL, error_msg VARCHAR(500) NULL, cost_ms INT NOT NULL,
-  op_time DATETIME NOT NULL, KEY idx_audit_operator(operator_id,op_time), KEY idx_audit_module(module,op_time),
-  KEY idx_audit_target(target_type,target_id), KEY idx_audit_trace(trace_id), KEY idx_audit_time(op_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='管理操作审计记录';
-
-CREATE TABLE IF NOT EXISTS sys_audit_log_change (
-  id BIGINT NOT NULL PRIMARY KEY, audit_id BIGINT NOT NULL, field_name VARCHAR(64) NOT NULL, field_label VARCHAR(64) NOT NULL,
-  old_value TEXT NULL, new_value TEXT NULL, old_display VARCHAR(500) NULL, new_display VARCHAR(500) NULL,
-  changed_type VARCHAR(16) NOT NULL, KEY idx_audit_change_audit(audit_id), KEY idx_audit_change_field(field_name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='管理操作审计字段变更明细';
-
--- 给内置超级管理员授予审计接口权限（menu_id 99001/99002 仅用于按钮级权限标识）。
-INSERT IGNORE INTO sys_menu(menu_id,menu_name,parent_id,order_num,path,component,query_param,is_frame,is_cache,menu_type,visible,status,perms,icon,create_dept,create_by,create_time,update_by,update_time,remark) VALUES
-(99001,'审计日志查询',1,90,'#','','',1,0,'F','1','0','system:audit:list','#',103,1,NOW(),NULL,NULL,'审计日志列表权限'),
-(99002,'审计日志详情',1,91,'#','','',1,0,'F','1','0','system:audit:detail','#',103,1,NOW(),NULL,NULL,'审计日志详情权限');
-
-INSERT IGNORE INTO sys_role_menu(role_id,menu_id) VALUES(1,99001),(1,99002);
 
 SET FOREIGN_KEY_CHECKS = 1;

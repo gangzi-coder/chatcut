@@ -6,6 +6,7 @@ import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import com.chatcut.common.core.constant.SystemConstants;
@@ -38,6 +39,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -128,26 +130,27 @@ public class SysUserController extends BaseController {
      * @param userId 用户ID
      */
     @SaCheckPermission("system:user:query")
-    @GetMapping(value = {"/", "/{userId}"})
-    public R<SysUserInfoResp> getInfo(@PathVariable(value = "userId", required = false) Long userId) {
+    @GetMapping("/getSysUserInfo")
+    public R<SysUserInfoResp> getSysUserInfo(@RequestParam(value = "userId", required = false) String userId) {
+        Long id = StringUtils.isBlank(userId) ? null : Long.valueOf(userId);
         SysUserInfoResp userInfoVo = new SysUserInfoResp();
-        if (ObjectUtil.isNotNull(userId)) {
-            userService.checkUserDataScope(userId);
-            SysUserResp sysUser = userService.selectUserById(userId);
+        if (ObjectUtil.isNotNull(id)) {
+            userService.checkUserDataScope(id);
+            SysUserResp sysUser = userService.selectUserById(id);
             userInfoVo.setUser(sysUser);
-            userInfoVo.setRoleIds(roleService.selectRoleListByUserId(userId));
+            userInfoVo.setRoleIds(roleService.selectRoleListByUserId(id));
             Long deptId = sysUser.getDeptId();
             if (ObjectUtil.isNotNull(deptId)) {
                 SysPostReq postBo = new SysPostReq();
                 postBo.setDeptId(deptId);
                 userInfoVo.setPosts(postService.selectPostList(postBo));
-                userInfoVo.setPostIds(postService.selectPostListByUserId(userId));
+                userInfoVo.setPostIds(postService.selectPostListByUserId(id));
             }
         }
         SysRoleReq roleBo = new SysRoleReq();
         roleBo.setStatus(SystemConstants.NORMAL);
         List<SysRoleResp> roles = roleService.selectRoleList(roleBo);
-        userInfoVo.setRoles(LoginHelper.isSuperAdmin(userId) ? roles : StreamUtils.filter(roles, r -> !r.isSuperAdmin()));
+        userInfoVo.setRoles(LoginHelper.isSuperAdmin(id) ? roles : StreamUtils.filter(roles, r -> !r.isSuperAdmin()));
         return R.ok(userInfoVo);
     }
 
@@ -157,7 +160,7 @@ public class SysUserController extends BaseController {
     @SaCheckPermission("system:user:add")
     @Log(title = "用户管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
-    @PostMapping
+    @PostMapping("/addSysUser")
     public R<Void> add(@Validated @RequestBody SysUserReq user) {
         deptService.checkDeptDataScope(user.getDeptId());
         if (!userService.checkUserNameUnique(user)) {
@@ -177,7 +180,7 @@ public class SysUserController extends BaseController {
     @SaCheckPermission("system:user:edit")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping
+    @PostMapping("/updateSysUser")
     public R<Void> edit(@Validated @RequestBody SysUserReq user) {
         userService.checkUserAllowed(user.getUserId());
         userService.checkUserDataScope(user.getUserId());
@@ -199,12 +202,16 @@ public class SysUserController extends BaseController {
      */
     @SaCheckPermission("system:user:remove")
     @Log(title = "用户管理", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{userIds}")
-    public R<Void> remove(@PathVariable Long[] userIds) {
-        if (ArrayUtil.contains(userIds, LoginHelper.getUserId())) {
+    @PostMapping("/removeSysUser")
+    public R<Void> remove(@NotEmpty(message = "主键不能为空")
+                          @RequestParam("ids") String ids) {
+        List<Long> idList = Arrays.stream(ids.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .map(Long::valueOf).toList();
+        if (idList.contains(LoginHelper.getUserId())) {
             return R.fail("当前用户不能删除");
         }
-        return toAjax(userService.deleteUserByIds(userIds));
+        return toAjax(userService.deleteUserByIds(idList.toArray(new Long[0])));
     }
 
     /**
@@ -227,7 +234,7 @@ public class SysUserController extends BaseController {
     @SaCheckPermission("system:user:resetPwd")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping("/resetPwd")
+    @PostMapping("/resetPwd")
     public R<Void> resetPwd(@RequestBody SysUserReq user) {
         userService.checkUserAllowed(user.getUserId());
         userService.checkUserDataScope(user.getUserId());
@@ -241,7 +248,7 @@ public class SysUserController extends BaseController {
     @SaCheckPermission("system:user:edit")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping("/changeStatus")
+    @PostMapping("/changeStatus")
     public R<Void> changeStatus(@RequestBody SysUserReq user) {
         userService.checkUserAllowed(user.getUserId());
         userService.checkUserDataScope(user.getUserId());
@@ -254,14 +261,15 @@ public class SysUserController extends BaseController {
      * @param userId 用户ID
      */
     @SaCheckPermission("system:user:query")
-    @GetMapping("/authRole/{userId}")
-    public R<SysUserInfoResp> authRole(@PathVariable Long userId) {
-        userService.checkUserDataScope(userId);
-        SysUserResp user = userService.selectUserById(userId);
-        List<SysRoleResp> roles = roleService.selectRolesAuthByUserId(userId);
+    @GetMapping("/getSysUserAuthRole")
+    public R<SysUserInfoResp> getSysUserAuthRole(@RequestParam("userId") String userId) {
+        Long id = Long.valueOf(userId);
+        userService.checkUserDataScope(id);
+        SysUserResp user = userService.selectUserById(id);
+        List<SysRoleResp> roles = roleService.selectRolesAuthByUserId(id);
         SysUserInfoResp userInfoVo = new SysUserInfoResp();
         userInfoVo.setUser(user);
-        userInfoVo.setRoles(LoginHelper.isSuperAdmin(userId) ? roles : StreamUtils.filter(roles, r -> !r.isSuperAdmin()));
+        userInfoVo.setRoles(LoginHelper.isSuperAdmin(id) ? roles : StreamUtils.filter(roles, r -> !r.isSuperAdmin()));
         return R.ok(userInfoVo);
     }
 
@@ -274,10 +282,11 @@ public class SysUserController extends BaseController {
     @SaCheckPermission("system:user:edit")
     @Log(title = "用户管理", businessType = BusinessType.GRANT)
     @RepeatSubmit()
-    @PutMapping("/authRole")
-    public R<Void> insertAuthRole(Long userId, Long[] roleIds) {
-        userService.checkUserDataScope(userId);
-        userService.insertUserAuth(userId, roleIds);
+    @PostMapping("/grantSysUserAuthRole")
+    public R<Void> insertAuthRole(String userId, Long[] roleIds) {
+        Long id = Long.valueOf(userId);
+        userService.checkUserDataScope(id);
+        userService.insertUserAuth(id, roleIds);
         return R.ok();
     }
 
@@ -294,9 +303,9 @@ public class SysUserController extends BaseController {
      * 获取部门下的所有用户信息
      */
     @SaCheckPermission("system:user:list")
-    @GetMapping("/list/dept/{deptId}")
-    public R<List<SysUserResp>> listByDept(@PathVariable @NotNull Long deptId) {
-        return R.ok(userService.selectUserListByDept(deptId));
+    @GetMapping("/listSysUsersByDept")
+    public R<List<SysUserResp>> listByDept(@RequestParam("deptId") @NotNull String deptId) {
+        return R.ok(userService.selectUserListByDept(Long.valueOf(deptId)));
     }
 
 }

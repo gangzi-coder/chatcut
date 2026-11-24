@@ -38,6 +38,8 @@ public class SaTokenWebConfig implements WebMvcConfigurer {
 
     private static final String[] WHITE_LIST = {
             "/internal/health",
+            // 服务间调用走独立签名/网络隔离，不属于用户登录体系，一律放行
+            "/internal/**",
             "/actuator/**",
             "/v3/api-docs/**",
             // knife4j 增强文档页；其静态资源走 /webjars/**，spec 仍取 /v3/api-docs
@@ -54,8 +56,8 @@ public class SaTokenWebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // none 完全免登录；若依后台使用若依自己的 Sa-Token 安全链路。
-        if ("none".equalsIgnoreCase(type) || "ruoyi".equalsIgnoreCase(type)) {
+        // none 完全免登录（官网门户这类只读服务）。
+        if ("none".equalsIgnoreCase(type)) {
             return;
         }
         if (!SUPPORTED.contains(type.toLowerCase())) {
@@ -64,7 +66,15 @@ public class SaTokenWebConfig implements WebMvcConfigurer {
         // 注意：这里只注册 lambda，不能在本方法里解析 StpLogic——
         // StpLogic 由 StpLogicConfig 的 SmartInitializingSingleton 绑定，时机晚于本方法；
         // 提前调 logic() 会抛 "not initialized"（曾导致 enterprise 服务启动失败）。
-        registry.addInterceptor(new SaInterceptor(handle -> logicFor(type).checkLogin()))
+        registry.addInterceptor(new SaInterceptor(handle -> {
+            // ruoyi（若依管理端）的 loginId 是 "sys_user:{id}"，走 StpUtil 默认账号体系。
+            // 此前 ruoyi 直接跳过注册，导致 @SaCheckPermission 无载体、全部接口未登录可访问（安全缺陷）。
+            if ("ruoyi".equalsIgnoreCase(type)) {
+                cn.dev33.satoken.stp.StpUtil.checkLogin();
+                return;
+            }
+            logicFor(type).checkLogin();
+        }))
                 .addPathPatterns("/**")
                 .excludePathPatterns(WHITE_LIST);
     }

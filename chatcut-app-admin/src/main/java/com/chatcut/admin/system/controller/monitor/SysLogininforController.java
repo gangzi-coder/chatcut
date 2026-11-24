@@ -20,6 +20,8 @@ import com.chatcut.admin.system.service.ISysLogininforService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+
 import java.util.List;
 
 /**
@@ -61,9 +63,12 @@ public class SysLogininforController extends BaseController {
      */
     @SaCheckPermission("monitor:logininfor:remove")
     @Log(title = "登录日志", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{infoIds}")
-    public R<Void> remove(@PathVariable Long[] infoIds) {
-        return toAjax(logininforService.deleteLogininforByIds(infoIds));
+    @PostMapping("/removeSysLogininfor")
+    public R<Void> remove(@RequestParam("ids") String infoIds) {
+        List<Long> idList = Arrays.stream(infoIds.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .map(Long::valueOf).toList();
+        return toAjax(logininforService.deleteLogininforByIds(idList.toArray(new Long[0])));
     }
 
     /**
@@ -72,7 +77,7 @@ public class SysLogininforController extends BaseController {
     @SaCheckPermission("monitor:logininfor:remove")
     @Log(title = "登录日志", businessType = BusinessType.CLEAN)
     @Lock4j
-    @DeleteMapping("/clean")
+    @PostMapping("/cleanSysLogininfor")
     public R<Void> clean() {
         logininforService.cleanLogininfor();
         return R.ok();
@@ -81,8 +86,8 @@ public class SysLogininforController extends BaseController {
     @SaCheckPermission("monitor:logininfor:unlock")
     @Log(title = "账户解锁", businessType = BusinessType.OTHER)
     @RepeatSubmit()
-    @GetMapping("/unlock/{userName}")
-    public R<Void> unlock(@PathVariable("userName") String userName) {
+    @GetMapping("/unlock")
+    public R<Void> unlock(@RequestParam("userName") String userName) {
         String loginName = CacheConstants.PWD_ERR_CNT_KEY + userName;
         if (RedisUtils.hasKey(loginName)) {
             RedisUtils.deleteObject(loginName);

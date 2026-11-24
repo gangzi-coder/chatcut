@@ -65,7 +65,7 @@ public class SysProfileController extends BaseController {
      */
     @RepeatSubmit
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
-    @PutMapping
+    @PostMapping("/updateSysProfile")
     public R<Void> updateProfile(@Validated @RequestBody SysUserProfileReq profile) {
         SysUserReq user = BeanUtil.toBean(profile, SysUserReq.class);
         user.setUserId(LoginHelper.getUserId());
@@ -91,7 +91,7 @@ public class SysProfileController extends BaseController {
     @RepeatSubmit
     @ApiEncrypt
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
-    @PutMapping("/updatePwd")
+    @PostMapping("/updatePwd")
     public R<Void> updatePwd(@Validated @RequestBody SysUserPasswordReq bo) {
         SysUserResp user = userService.selectUserById(LoginHelper.getUserId());
         String password = user.getPassword();

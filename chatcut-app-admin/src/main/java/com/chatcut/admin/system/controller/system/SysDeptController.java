@@ -49,11 +49,12 @@ public class SysDeptController extends BaseController {
      * @param deptId 部门ID
      */
     @SaCheckPermission("system:dept:list")
-    @GetMapping("/list/exclude/{deptId}")
-    public R<List<SysDeptResp>> excludeChild(@PathVariable(value = "deptId", required = false) Long deptId) {
+    @GetMapping("/listExcludeChild")
+    public R<List<SysDeptResp>> excludeChild(@RequestParam(value = "deptId", required = false) String deptId) {
+        Long id = StringUtils.isBlank(deptId) ? null : Long.valueOf(deptId);
         List<SysDeptResp> depts = deptService.selectDeptList(new SysDeptReq());
-        depts.removeIf(d -> d.getDeptId().equals(deptId)
-            || StringUtils.splitList(d.getAncestors()).contains(Convert.toStr(deptId)));
+        depts.removeIf(d -> id != null && (d.getDeptId().equals(id)
+            || StringUtils.splitList(d.getAncestors()).contains(Convert.toStr(id))));
         return R.ok(depts);
     }
 
@@ -63,10 +64,11 @@ public class SysDeptController extends BaseController {
      * @param deptId 部门ID
      */
     @SaCheckPermission("system:dept:query")
-    @GetMapping(value = "/{deptId}")
-    public R<SysDeptResp> getInfo(@PathVariable Long deptId) {
-        deptService.checkDeptDataScope(deptId);
-        return R.ok(deptService.selectDeptById(deptId));
+    @GetMapping("/getSysDeptInfo")
+    public R<SysDeptResp> getInfo(@RequestParam("id") String deptId) {
+        Long id = Long.valueOf(deptId);
+        deptService.checkDeptDataScope(id);
+        return R.ok(deptService.selectDeptById(id));
     }
 
     /**
@@ -75,7 +77,7 @@ public class SysDeptController extends BaseController {
     @SaCheckPermission("system:dept:add")
     @Log(title = "部门管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
-    @PostMapping
+    @PostMapping("/addSysDept")
     public R<Void> add(@Validated @RequestBody SysDeptReq dept) {
         if (!deptService.checkDeptNameUnique(dept)) {
             return R.fail("新增部门'" + dept.getDeptName() + "'失败，部门名称已存在");
@@ -89,7 +91,7 @@ public class SysDeptController extends BaseController {
     @SaCheckPermission("system:dept:edit")
     @Log(title = "部门管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping
+    @PostMapping("/updateSysDept")
     public R<Void> edit(@Validated @RequestBody SysDeptReq dept) {
         Long deptId = dept.getDeptId();
         deptService.checkDeptDataScope(deptId);
@@ -114,22 +116,23 @@ public class SysDeptController extends BaseController {
      */
     @SaCheckPermission("system:dept:remove")
     @Log(title = "部门管理", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{deptId}")
-    public R<Void> remove(@PathVariable Long deptId) {
-        if (SystemConstants.DEFAULT_DEPT_ID.equals(deptId)) {
+    @PostMapping("/removeSysDept")
+    public R<Void> remove(@RequestParam("id") String deptId) {
+        Long id = Long.valueOf(deptId);
+        if (SystemConstants.DEFAULT_DEPT_ID.equals(id)) {
             return R.warn("默认部门,不允许删除");
         }
-        if (deptService.hasChildByDeptId(deptId)) {
+        if (deptService.hasChildByDeptId(id)) {
             return R.warn("存在下级部门,不允许删除");
         }
-        if (deptService.checkDeptExistUser(deptId)) {
+        if (deptService.checkDeptExistUser(id)) {
             return R.warn("部门存在用户,不允许删除");
         }
-        if (postService.countPostByDeptId(deptId) > 0) {
+        if (postService.countPostByDeptId(id) > 0) {
             return R.warn("部门存在岗位,不允许删除");
         }
-        deptService.checkDeptDataScope(deptId);
-        return toAjax(deptService.deleteDeptById(deptId));
+        deptService.checkDeptDataScope(id);
+        return toAjax(deptService.deleteDeptById(id));
     }
 
     /**

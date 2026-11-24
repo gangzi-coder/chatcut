@@ -83,8 +83,8 @@ public class SysUserOnlineController extends BaseController {
     @SaCheckPermission("monitor:online:forceLogout")
     @Log(title = "在线用户", businessType = BusinessType.FORCE)
     @RepeatSubmit()
-    @DeleteMapping("/{tokenId}")
-    public R<Void> forceLogout(@PathVariable String tokenId) {
+    @PostMapping("/forceLogout")
+    public R<Void> forceLogout(@RequestParam("tokenId") String tokenId) {
         try {
             StpUtil.kickoutByTokenValue(tokenId);
         } catch (NotLoginException ignored) {
@@ -95,8 +95,8 @@ public class SysUserOnlineController extends BaseController {
     /**
      * 获取当前用户登录在线设备
      */
-    @GetMapping()
-    public TableDataInfo<SysUserOnlineResp> getInfo() {
+    @GetMapping("/listMyOnlineDevices")
+    public TableDataInfo<SysUserOnlineResp> listMyOnlineDevices() {
         // 获取指定账号 id 的 token 集合
         List<String> tokenIds = StpUtil.getTokenValueListByLoginId(StpUtil.getLoginIdAsString());
         List<UserOnlineDTO> userOnlineDTOList = tokenIds.stream()
@@ -117,8 +117,8 @@ public class SysUserOnlineController extends BaseController {
      */
     @Log(title = "在线设备", businessType = BusinessType.FORCE)
     @RepeatSubmit()
-    @DeleteMapping("/myself/{tokenId}")
-    public R<Void> remove(@PathVariable("tokenId") String tokenId) {
+    @PostMapping("/removeMyOnlineDevice")
+    public R<Void> remove(@RequestParam("tokenId") String tokenId) {
         try {
             // 获取指定账号 id 的 token 集合
             List<String> keys = StpUtil.getTokenValueListByLoginId(StpUtil.getLoginIdAsString());

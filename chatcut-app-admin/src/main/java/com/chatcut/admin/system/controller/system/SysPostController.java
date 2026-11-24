@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.hutool.core.lang.tree.Tree;
 import cn.hutool.core.util.ObjectUtil;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import com.chatcut.common.core.constant.SystemConstants;
 import com.chatcut.common.core.domain.R;
@@ -66,9 +67,9 @@ public class SysPostController extends BaseController {
      * @param postId 岗位ID
      */
     @SaCheckPermission("system:post:query")
-    @GetMapping(value = "/{postId}")
-    public R<SysPostResp> getInfo(@PathVariable Long postId) {
-        return R.ok(postService.selectPostById(postId));
+    @GetMapping("/getSysPostInfo")
+    public R<SysPostResp> getInfo(@RequestParam("id") String postId) {
+        return R.ok(postService.selectPostById(Long.valueOf(postId)));
     }
 
     /**
@@ -77,7 +78,7 @@ public class SysPostController extends BaseController {
     @SaCheckPermission("system:post:add")
     @Log(title = "岗位管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
-    @PostMapping
+    @PostMapping("/addSysPost")
     public R<Void> add(@Validated @RequestBody SysPostReq post) {
         if (!postService.checkPostNameUnique(post)) {
             return R.fail("新增岗位'" + post.getPostName() + "'失败，岗位名称已存在");
@@ -93,7 +94,7 @@ public class SysPostController extends BaseController {
     @SaCheckPermission("system:post:edit")
     @Log(title = "岗位管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
-    @PutMapping
+    @PostMapping("/updateSysPost")
     public R<Void> edit(@Validated @RequestBody SysPostReq post) {
         if (!postService.checkPostNameUnique(post)) {
             return R.fail("修改岗位'" + post.getPostName() + "'失败，岗位名称已存在");
@@ -113,9 +114,13 @@ public class SysPostController extends BaseController {
      */
     @SaCheckPermission("system:post:remove")
     @Log(title = "岗位管理", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{postIds}")
-    public R<Void> remove(@PathVariable Long[] postIds) {
-        return toAjax(postService.deletePostByIds(Arrays.asList(postIds)));
+    @PostMapping("/removeSysPost")
+    public R<Void> remove(@NotEmpty(message = "主键不能为空")
+                          @RequestParam("ids") String postIds) {
+        List<Long> idList = Arrays.stream(postIds.split(","))
+            .map(String::trim).filter(s -> !s.isEmpty())
+            .map(Long::valueOf).toList();
+        return toAjax(postService.deletePostByIds(idList));
     }
 
     /**
