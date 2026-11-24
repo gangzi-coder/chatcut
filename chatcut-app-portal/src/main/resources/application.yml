@@ -37,8 +37,9 @@ chatcut:
   cors:
     # 官网域名与后台域名可能不同源，按环境在 Nacos 里收敛
     allowed-origins: ${CORS_ORIGINS:*}
-  # 注意：本服务不依赖 common-security-web，没有 sa-token 拦截器，
-  # 全部接口只读、匿名可访问，任何写接口都不允许出现在这个服务里。
+  # 注意：本服务不依赖 common-security-web 的会话体系，chatcut.security.type=none
+  # （在 Nacos 私有配置里设置）完全免登录；公开读取 + 访客留资/反馈写入，无其他写接口。
+  # Redis 仅用于访客接口限流（@RateLimiter/Redisson），连接配置继承 Nacos chatcut-common-local.yaml。
 
 nacos:
   group: DEFAULT_GROUP

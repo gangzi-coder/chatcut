@@ -5,9 +5,11 @@
 #   dataId    : chatcut-app-portal-local.yaml
 #   format    : YAML
 #
-# portal（官网门户）的私有中间件配置：只有数据源。
-# 官网免登录只读，查的是后台（chatcut_admin）配置的展示数据，因此连 chatcut_admin 库。
-# 生产环境务必换成只读账号（仅 SELECT），并把可访问范围限定到官网用到的几张表。
+# portal（官网门户）的私有中间件配置：数据源 + 官网访客端业务开关。
+# 官网免登录，公开读取 + 访客留资/反馈写入，查/写的是官网域表（chatcut_admin_ruoyi 库）。
+# Redis 连接继承 chatcut-common-local.yaml，仅用于访客接口限流（@RateLimiter/Redisson），
+# 阈值为注解静态值（captcha 30/分钟、submit 5/分钟），不在 yaml 配置。
+# 生产环境务必换成受限账号，并把可访问范围限定到官网用到的几张表。
 # ============================================================
 
 spring:
@@ -16,9 +18,9 @@ spring:
       datasource:
         master:
           # 账号（driver/username/password）继承 chatcut-common-local.yaml；
-          # 生产环境务必换成只读账号（仅 SELECT），并把可访问范围限定到官网用到的几张表：
+          # 生产环境务必换成受限账号，并把可访问范围限定到官网用到的几张表：
           # 直接改 chatcut-common-local.yaml。
-          url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DB:chatcut_admin}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+          url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DB:chatcut_admin_ruoyi}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
           hikari:
             pool-name: chatcut-portal-pool
             maximum-pool-size: 4
@@ -30,8 +32,21 @@ spring:
             keepalive-time: 30000
             initialization-fail-timeout: -1
 
+# ---------- 安全 ----------
+# portal 免登录（公开读取 + 访客留资/反馈写入），显式声明 type=none：
+# 避免公共 Web 配置里默认的 user 体系给 /website/** 注册登录拦截器。
+chatcut:
+  security:
+    type: none
+  website:
+    # 一次性验证码令牌（HMAC-SHA256 无状态方案，无 Redis 会话）：生产务必覆盖强随机密钥
+    captcha:
+      secret-key: ${PORTAL_CAPTCHA_SECRET:chatcut-portal-captcha-dev-secret-change-me}
+      ttl-minutes: 10
+
 # ---------- 业务开关 ----------
-# portal 无 MQ、无 Redis 会话、无 sa-token；任何写接口都不允许出现在这个服务里。
+# portal 无 MQ、无 sa-token、无 Redis 会话；Redis 仅用于访客接口限流。
+# 允许的写入仅限访客留资/反馈提交。
 
 mybatis-plus:
   mapperPackage: com.chatcut.portal.**.repository.mapper
