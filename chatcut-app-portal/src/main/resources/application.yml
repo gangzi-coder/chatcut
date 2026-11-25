@@ -8,7 +8,7 @@ spring:
   application:
     name: chatcut-app-portal
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   # Nacos 配置中心：共享配置 + 本服务配置，缺失不阻断启动
   config:
     import:
@@ -44,15 +44,16 @@ chatcut:
 nacos:
   group: DEFAULT_GROUP
   username: ${NACOS_USERNAME:nacos}
-  password: ${NACOS_PASSWORD:nacos}
+  password: ${NACOS_PASSWORD:nacos@@1125}
   server-addr: ${nacos.endpoints.${spring.profiles.active}}
   namespace: ${nacos.namespaces.${spring.profiles.active}}
   endpoints:
-    local: 127.0.0.1:8848
-    dev: nacos-dev.chatcut.internal:8848
+    dev: http://47.116.16.246:8848
+    test: 127.0.0.1:8848
     prod: nacos.chatcut.internal:8848
   namespaces:
-    local: 1898c274-9625-4117-ba85-e3757117deeb
+    dev: 65cdf6e6-b3e6-4b85-a074-1775eb55b732
     # 建好 dev / prod 命名空间后把真实 ID 替换进来
-    dev: 00000000-0000-0000-0000-000000000000
+    test: 431f3f5a-6814-4885-9c71-e5849c0d1e87
     prod: 00000000-0000-0000-0000-000000000000
+
