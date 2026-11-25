@@ -7,12 +7,12 @@
 --
 -- 使用方式：
 --   1. 建库：CREATE DATABASE chatcut_admin_ruoyi DEFAULT CHARACTER SET utf8mb4;
---   2. 导入（从 chatcut/ 目录执行）：mysql -uroot -p --default-character-set=utf8mb4 chatcut_admin_ruoyi < docs/sql/00_ruoyi_admin_init.sql
+--   2. 导入（从 chatcut/ 目录执行）：mysql -uroot -p --default-character-set=utf8mb4 chatcut_admin_ruoyi < sql/00_ruoyi_admin_init.sql
 --
--- 本目录统一维护全部 SQL：00 为基础库脚本（须先执行），01-03 为官网运营后台业务表。
+-- 本目录统一维护全部 SQL：00 为基础库脚本（须先执行），01-03 为官网运营后台业务表，
+-- 04 为官网菜单权限初始化（须在 00 之后执行）。
 --
--- 注意：脚本会先删除同名表再重建（审计表除外，见下方说明），仅用于空库初始化或重建，
---       勿在有业务数据的库上执行。审计表为追加写，重复执行不会丢审计数据。
+-- 注意：脚本会先删除同名表再重建，仅用于空库初始化或重建，勿在有业务数据的库上执行。
 -- 初始账号：admin / admin123，首次登录后请修改密码。
 -- ============================================================================
 
@@ -324,7 +324,9 @@ create table sys_client (
     primary key (id)
 ) engine=innodb default charset=utf8mb4 collate=utf8mb4_general_ci comment='系统授权表';
 insert into sys_client values (1, 'e5cd7e4891bf95d1d19206ce24a7b32e', 'pc', 'pc123', 'password', 'pc', 1800, 604800, 0, 0, 103, 1, sysdate(), 1, sysdate());
-INSERT INTO sys_oss_config (oss_config_id,config_key,access_key,secret_key,bucket_name,prefix,endpoint,domain,is_https,region,access_policy,status,ext1,create_dept,create_by,create_time,remark) VALUES (1,'aliyun','','','','','','','N','','1','0','',103,1,NOW(),'填写实际对象存储参数后启用');
+-- OSS 配置（2026-11-25 定稿）：bucket 华东2(上海) 公共读，与 ECS 同地域走内网 endpoint；
+-- AK/SK 不入库（敏感凭据），部署后通过 admin 后台「文件管理 → 配置管理」填写。
+INSERT INTO sys_oss_config (oss_config_id,config_key,access_key,secret_key,bucket_name,prefix,endpoint,domain,is_https,region,access_policy,status,ext1,create_dept,create_by,create_time,remark) VALUES (1,'aliyun','','','chatcut-test-oss-portal','','http://oss-cn-shanghai-internal.aliyuncs.com','','N','cn-shanghai','2','0','',103,1,NOW(),'阿里云OSS官网素材桶(公共读)，AK/SK部署后后台填写');
 
 -- ============================================================================
 -- （2026-11-24）自建审计模块已删除：操作留痕统一走若依 @Log → sys_oper_log；

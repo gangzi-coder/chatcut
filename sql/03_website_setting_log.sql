@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS web_site_setting (
 
 CREATE TABLE IF NOT EXISTS web_change_log (
   id BIGINT NOT NULL COMMENT '变更明细主键，雪花 ID' PRIMARY KEY,
-  event_id BIGINT NOT NULL COMMENT '关联审计日志或业务事件日志 ID',
+  event_id BIGINT NOT NULL COMMENT '关联操作日志 ID（sys_oper_log.oper_id）',
   entity_type VARCHAR(32) NOT NULL COMMENT '实体类型：CONTENT/LEAD/FEEDBACK/ASSET/SETTING',
   entity_id BIGINT NOT NULL COMMENT '实体主键',
   field_name VARCHAR(64) NOT NULL COMMENT '变更字段名',
@@ -28,5 +28,5 @@ CREATE TABLE IF NOT EXISTS web_change_log (
   KEY idx_web_change_entity (entity_type, entity_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='官网运营字段变更明细';
 
--- 操作审计摘要复用项目已有表 sys_audit_log / sys_audit_log_change，
--- 定义见同目录 00_ruoyi_admin_init.sql，本目录不重复维护。
+-- 操作审计复用 sys_oper_log（若依 @Log 自动写入，见 00_ruoyi_admin_init.sql）；
+-- web_change_log.event_id 关联 sys_oper_log.oper_id，记录 website 域字段级变更明细。
